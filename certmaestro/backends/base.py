@@ -2,8 +2,8 @@ from zope.interface import Interface, Attribute
 
 
 class IConfig(Interface):
-    required_for_connect = Attribute('Parameters required for initial connection')
-    required_for_init = Attribute('Parameters required for initialization')
+    check_config_requires = Attribute('Parameters required for initial connection')
+    init_reqires = Attribute('Parameters required for the backend initialization')
 
 
 class IBackend(Interface):
@@ -22,8 +22,14 @@ class IBackend(Interface):
     def issue_cert(self, common_name):
         """Issue a new cert for a Common Name."""
 
+    def revoke_cert(self, serial_number):
+        """Revoke certificate by serial number."""
+
     def get_cert_list(self):
         """Get the list of all the issued certificates."""
 
     def get_cert(self, serial):
         """Get certificate."""
+
+    def get_crl(self):
+        """Get certificate revocation list."""

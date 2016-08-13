@@ -72,10 +72,20 @@ class VaultBackend:
         issue_url = 'pki/issue/%s' % self.config.role
         return self._client.write(issue_url, common_name=common_name)
 
-    def get_cert_list(self):
-        cert_list_url = '/pki/certs/?list=true'
-        return self.client.read(cert_list_url)
+    def revoke_cert(self, serial_number):
+        return self._client.write('pki/revoke', serial_number=serial_number)
 
-    def get_cert(self, serial):
-        cert_detail_url = '/pki/cert/%s' % serial
-        return self.client.read(cert_detail_url)
+    def get_cert_list(self):
+        res = self._client.list('pki/certs')
+        for serial_number in res['data']['keys']:
+            yield self.get_cert(serial_number)
+
+    def get_cert(self, serial_number) -> Cert:
+        res = self._client.read('pki/cert/%s' % serial_number)
+        pem_data = res['data']['certificate']
+        return Cert(pem_data)
+
+    def get_crl(self) -> Crl:
+        res = self._client.read('pki/cert/crl')
+        pem_data = res['data']['certificate']
+        return Crl(pem_data)

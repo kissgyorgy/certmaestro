@@ -13,6 +13,9 @@ class Config:
     def __str__(self):
         return 'Certmaestro Config Path: {}\n'.format(realpath(self.path))
 
+    def __repr__(self):
+        return '<Certmaestro Config: %s>' % realpath(self.path)
+
     def reload(self):
         self._cfg.read(self.path)
 

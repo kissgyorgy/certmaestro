@@ -1,6 +1,7 @@
 from collections import namedtuple
 import click
 from certmaestro import Config, get_backend
+from tabulate import tabulate
 
 
 Obj = namedtuple('Obj', 'config, backend')
@@ -50,27 +51,33 @@ def issue_cert(obj):
     click.echo(result)
 
 
-@main.command('view-cert')
-@click.argument('serial')
+@main.command('show-cert')
+@click.argument('serial_number')
 @click.pass_obj
-def show_cert(obj, serial):
+def show_cert(obj, serial_number):
     """View certificate details."""
-    cert = obj.backend.get_cert(serial)
-    click.echo(cert)
+    cert = obj.backend.get_cert(serial_number)
+    click.echo('Serial number:     %s' % cert.coloned_serial)
+    click.echo('Common Name:       %s' % cert.common_name)
+    click.echo('Expires:           %s' % cert.expiration)
 
 
 @main.command('list-certs')
 @click.pass_obj
 def list_certs(obj):
     """List issued certificates."""
-    certs = obj.backend.get_cert_list()
-    click.echo(certs)
+    cert_list = obj.backend.get_cert_list()
+    cert_table = ((c.common_name, c.expires, c.serial_number,) for c in cert_list)
+    click.echo(tabulate(cert_table, headers=['Common Name', 'Expires', 'Serial Number']))
 
 
 @main.command('revoke-cert')
+@click.argument('serial_number')
 @click.pass_obj
-def revoke_cert(obj):
+def revoke_cert(obj, serial_number):
     """Revoke a certificate."""
+    result = obj.backend.revoke_cert(serial_number)
+    click.echo(result)
 
 
 @main.command('update-crl')
@@ -79,10 +86,19 @@ def update_crl(obj):
     """Update the Certificate Revocation List (CRL)."""
 
 
-@main.command('view-crl')
+@main.command('show-crl')
 @click.pass_obj
 def show_crl(obj):
-    """Update the Certificate Revocation List (CRL)."""
+    """Show the Certificate Revocation List."""
+    crl = obj.backend.get_crl()
+    click.echo('Issuer Common Name:    %s' % crl.issuer)
+    click.echo('Last update:           %s' % crl.last_update)
+    click.echo('Next update:           %s' % crl.next_update)
+    click.echo()
+    headers = ['Revocation Date', 'Invalidity Date', 'Reason', 'Serial Number']
+    revoked_certs = ((rc.revocation_date, rc.invalidity_date, rc.reason, rc.serial_number)
+                     for rc in crl)
+    click.echo(tabulate(revoked_certs, headers=headers))
 
 
 @main.command('deploy-cert')
