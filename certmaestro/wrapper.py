@@ -1,3 +1,7 @@
+"""
+    Wrapper around cryptography.x509 module for a nicer API.
+"""
+
 import datetime as dt
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -5,7 +9,6 @@ from .helpers import hexify
 
 
 class Cert:
-    """Wrapper around cryptography.x509 module for a nicer API."""
 
     def __init__(self, pem_data):
         self._cert = x509.load_pem_x509_certificate(pem_data.encode('utf8'), default_backend())

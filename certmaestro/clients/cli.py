@@ -32,7 +32,7 @@ def init_backend(obj):
         required_params[param_name] = click.prompt(question, default=default)
     obj.backend.init(**required_params)
     obj.config.save()
-    click.echo('Initialized backend. You can issue certificates now!')
+    click.echo('Successfully initialized backend. You can issue certificates now!')
 
 
 @main.command('show-config')
@@ -110,15 +110,14 @@ def deploy_cert(obj):
 
 def _validate_https(ctx, param, url):
     if url.startswith('http://'):
-        raise click.BadParameter('Sorry, you need to provide a https:// website!')
+        raise click.BadParameter('Sorry, you need to provide an https:// website!')
     return url
 
 
 @main.command('check-site')
 @click.argument('url', callback=_validate_https)
-@click.pass_obj
 @click.pass_context
-def check_site(ctx, obj, url):
+def check_site(ctx, url):
     """Simple check if the website has a valid certificate."""
     if not url.startswith('https://'):
         url = 'https://' + url
