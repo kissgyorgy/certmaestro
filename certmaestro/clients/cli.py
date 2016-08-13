@@ -15,9 +15,11 @@ def needs_config(command):
         ctx = click.get_current_context()
         if ctx.obj is None:
             if click.confirm('This command needs configuration and an initialized backend!\n'
-                             'Do you want to initialize one right now?'):
+                             'Do you want to initialize one now?'):
                 ctx.invoke(init_backend)
-                return
+                if click.confirm('Do you want to run the %s command now?' % ctx.command.name):
+                    ctx.invoke(ctx.command)
+                ctx.exit(0)
             else:
                 ctx.abort()
         return command(*args, **kwargs)
