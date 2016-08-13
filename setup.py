@@ -3,6 +3,7 @@ from setuptools import setup
 
 install_requires = [
     'click==6.6',
+    'requests',
     'hvac[parser]==0.2.15',
     'zope.interface==4.2.0',
     'tabulate==0.7.5',

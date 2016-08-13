@@ -1,7 +1,8 @@
 from collections import namedtuple
 import click
-from certmaestro import Config, get_backend
+import requests
 from tabulate import tabulate
+from certmaestro import Config, get_backend
 
 
 Obj = namedtuple('Obj', 'config, backend')
@@ -105,3 +106,29 @@ def show_crl(obj):
 @click.pass_obj
 def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
+
+
+def _validate_https(ctx, param, url):
+    if url.startswith('http://'):
+        raise click.BadParameter('Sorry, you need to provide a https:// website!')
+    return url
+
+
+@main.command('check-site')
+@click.argument('url', callback=_validate_https)
+@click.pass_obj
+@click.pass_context
+def check_site(ctx, obj, url):
+    """Simple check if the website has a valid certificate."""
+    if not url.startswith('https://'):
+        url = 'https://' + url
+
+    click.echo('Checking %s ...' % url)
+
+    try:
+        requests.head(url)  # noqa
+    except requests.exceptions.SSLError as e:
+        click.echo(str(e))
+        ctx.exit(1)
+
+    click.echo('Certificate is valid!')
