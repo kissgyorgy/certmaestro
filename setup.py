@@ -2,11 +2,11 @@ from setuptools import setup
 
 
 install_requires = [
-    'click==6.6',
+    'click',
     'requests',
-    'hvac[parser]==0.2.15',
-    'zope.interface==4.2.0',
-    'tabulate==0.7.5',
+    'hvac[parser]',
+    'zope.interface',
+    'tabulate',
 ]
 
 console_scripts = [
@@ -14,6 +14,7 @@ console_scripts = [
 ]
 
 classifiers = [
+    "Intended Audience :: System Administrators",
     "Development Status :: 1 - Planning",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
