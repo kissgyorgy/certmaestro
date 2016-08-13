@@ -1,13 +1,14 @@
-from os.path import realpath
+from os.path import expanduser, realpath
 from configparser import ConfigParser
 
 
 class Config:
+    DEFAULT_PATH = expanduser('~/.config/certmaestro/certmaestro.ini')
 
-    def __init__(self, path='$HOME/.config/certmaestro/config.ini'):
+    def __init__(self, path=DEFAULT_PATH):
         self.path = path
         cfg = ConfigParser()
-        cfg.read(path)
+        cfg.read_file(open(path))
         self._cfg = cfg
 
     def __str__(self):

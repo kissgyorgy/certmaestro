@@ -1,4 +1,5 @@
 from collections import namedtuple
+import functools
 import click
 import requests
 from tabulate import tabulate
@@ -8,11 +9,33 @@ from certmaestro import Config, get_backend
 Obj = namedtuple('Obj', 'config, backend')
 
 
+def needs_config(command):
+    @functools.wraps(command)
+    def wrapper(*args, **kwargs):
+        ctx = click.get_current_context()
+        if ctx.obj is None:
+            if click.confirm('This command needs configuration and an initialized backend!\n'
+                             'Do you want to initialize one right now?'):
+                ctx.invoke(init_backend)
+                return
+            else:
+                ctx.abort()
+        return command(*args, **kwargs)
+    return wrapper
+
+
 @click.group()
+@click.option('--config', 'config_path', default=Config.DEFAULT_PATH,
+              help='Default: ' + Config.DEFAULT_PATH,
+              type=click.Path(dir_okay=False, writable=True, resolve_path=True))
 @click.pass_context
-def main(ctx):
+def main(ctx, config_path):
     """Certmaestro command line interface."""
-    config = Config('certmaestro.ini')
+    try:
+        config = Config(config_path)
+    except FileNotFoundError:
+        return
+
     backend = get_backend(config)
     while not backend.check_config():
         click.echo('Invalid Configuration parameters!')
@@ -37,6 +60,7 @@ def init_backend(obj):
 
 @main.command('show-config')
 @click.pass_obj
+@needs_config
 def show_config(obj):
     """Shows saved configuration options."""
     click.echo(obj.config)
@@ -45,6 +69,7 @@ def show_config(obj):
 
 @main.command('issue-cert')
 @click.pass_obj
+@needs_config
 def issue_cert(obj):
     """Issue a new certificate."""
     common_name = click.prompt('Common name')
@@ -55,6 +80,7 @@ def issue_cert(obj):
 @main.command('show-cert')
 @click.argument('serial_number')
 @click.pass_obj
+@needs_config
 def show_cert(obj, serial_number):
     """View certificate details."""
     cert = obj.backend.get_cert(serial_number)
@@ -65,6 +91,7 @@ def show_cert(obj, serial_number):
 
 @main.command('list-certs')
 @click.pass_obj
+@needs_config
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
@@ -75,6 +102,7 @@ def list_certs(obj):
 @main.command('revoke-cert')
 @click.argument('serial_number')
 @click.pass_obj
+@needs_config
 def revoke_cert(obj, serial_number):
     """Revoke a certificate."""
     result = obj.backend.revoke_cert(serial_number)
@@ -83,12 +111,14 @@ def revoke_cert(obj, serial_number):
 
 @main.command('update-crl')
 @click.pass_obj
+@needs_config
 def update_crl(obj):
     """Update the Certificate Revocation List (CRL)."""
 
 
 @main.command('show-crl')
 @click.pass_obj
+@needs_config
 def show_crl(obj):
     """Show the Certificate Revocation List."""
     crl = obj.backend.get_crl()
@@ -104,6 +134,7 @@ def show_crl(obj):
 
 @main.command('deploy-cert')
 @click.pass_obj
+@needs_config
 def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 
