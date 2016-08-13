@@ -44,33 +44,33 @@ class VaultBackend:
 
     def __init__(self, config: VaultConfig):
         self.config = config
+        self._client = hvac.Client(self.config.url, self.config.token)
 
     def check_config(self):
-        self.client = hvac.Client(self.config.url, self.config.token)
-        return self.client.is_authenticated()
+        return self._client.is_authenticated()
 
     def __str__(self):
         return '<VaultBackend: {}>\n'.format(self.config.url)
 
     def init(self, *, mount_point, max_lease_ttl, common_name, role, allowed_domains,
              allow_subdomains, role_max_ttl):
-        self.client.enable_secret_backend('pki', mount_point=mount_point)
+        self._client.enable_secret_backend('pki', mount_point=mount_point)
         ttl = '%sh' % max_lease_ttl
         # vault mount-tune -max-lease-ttl=87600h pki
-        self.client.write('sys/mounts/{}/tune'.format(mount_point), max_lease_ttl=ttl)
-        self.client.write('pki/root/generate/internal', common_name=common_name, ttl=ttl)
+        self._client.write('sys/mounts/{}/tune'.format(mount_point), max_lease_ttl=ttl)
+        self._client.write('pki/root/generate/internal', common_name=common_name, ttl=ttl)
         # $ vault write pki/roles/example-dot-com
         #       allowed_domains="example.com" allow_subdomains="true" max_ttl="72h"
         max_ttl = '%sh' % role_max_ttl
-        self.client.write('pki/roles/%s' % role, allowed_domains=allowed_domains,
-                          allow_subdomains=allow_subdomains, max_ttl=max_ttl)
+        self._client.write('pki/roles/%s' % role, allowed_domains=allowed_domains,
+                           allow_subdomains=allow_subdomains, max_ttl=max_ttl)
 
-    def get_ca_cert(self):
-        return self.client.read('pki/cert/ca')
+    def get_ca_cert(self) -> Cert:
+        return Cert(self._client.read('pki/ca/pem'))
 
     def issue_cert(self, common_name):
         issue_url = 'pki/issue/%s' % self.config.role
-        return self.client.write(issue_url, common_name=common_name)
+        return self._client.write(issue_url, common_name=common_name)
 
     def get_cert_list(self):
         cert_list_url = '/pki/certs/?list=true'
