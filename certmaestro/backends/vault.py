@@ -1,5 +1,6 @@
 from zope.interface import implementer
 import hvac
+from ..wrapper import Cert, Crl
 from ..config import section_param
 from .base import IConfig, IBackend
 

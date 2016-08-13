@@ -1,7 +1,6 @@
 from collections import namedtuple
 import click
-from certmaestro.config import Config
-from certmaestro.backends import get_backend
+from certmaestro import Config, get_backend
 
 
 Obj = namedtuple('Obj', 'config, backend')
