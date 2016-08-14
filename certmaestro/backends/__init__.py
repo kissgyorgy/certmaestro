@@ -16,6 +16,6 @@ BACKENDS = {
 
 def get_backend(config):
     BackendConfig, BackendCls = BACKENDS[config.backend_name]
-    backend_config = BackendConfig(config.backend_config)
+    backend_config = BackendConfig(**config.backend_config)
     backend = BackendCls(backend_config)
     return backend

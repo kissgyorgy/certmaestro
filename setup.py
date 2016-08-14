@@ -7,6 +7,7 @@ install_requires = [
     'hvac[parser]',
     'zope.interface',
     'tabulate',
+    'attrs',
 ]
 
 console_scripts = [

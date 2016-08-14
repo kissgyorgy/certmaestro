@@ -1,6 +1,6 @@
 from zope.interface import implementer
 from .base import IBackendConfig, IBackend
-from ..config import section_param, DictLikeMixin  # noqa
+from ..config import DictLikeMixin
 
 
 @implementer(IBackendConfig)

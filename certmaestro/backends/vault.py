@@ -1,22 +1,25 @@
 from zope.interface import implementer
 import hvac
+import attr
 from ..wrapper import Cert, Crl
-from ..config import section_param, DictLikeMixin
+from ..config import DictLikeMixin, starts_with_http, getbool
 from .base import IBackendConfig, IBackend
 
 
 @implementer(IBackendConfig)
+@attr.s(slots=True)
 class VaultConfig(DictLikeMixin):
     name = 'Vault'
-    url = section_param('url', 'http://localhost:8200')
-    common_name = section_param('common_name')
-    mount_point = section_param('mount_point', 'pki')
-    token = section_param('token')
-    max_lease_ttl = section_param('max_lease_ttl', 87600)
-    role = section_param('role')
-    allowed_domains = section_param('allowed_domains')
-    allow_subdomains = section_param('allow_subdomains', True)
-    role_max_ttl = section_param('role_max_ttl', 72)
+
+    common_name = attr.ib()
+    token = attr.ib(repr=False)
+    role = attr.ib()
+    allowed_domains = attr.ib()
+    url = attr.ib(default='http://localhost:8200', validator=starts_with_http)
+    mount_point = attr.ib(default='pki')
+    max_lease_ttl = attr.ib(default=87600, convert=int)
+    allow_subdomains = attr.ib(default=True, convert=getbool)
+    role_max_ttl = attr.ib(default=72, convert=int)
 
     check_config_requires = [
         ('url', 'URL of the Vault server'),
@@ -31,12 +34,6 @@ class VaultConfig(DictLikeMixin):
         ('allow_subdomains', 'Allow subdomains?'),
         ('role_max_ttl', 'Role max ttl (hours)'),
     ]
-
-    def __init__(self, section):
-        self._section = section
-
-    def __str__(self):
-        return "Backend: {}\nPath: {}\nToken: {}".format(self.name, self.url, self.token)
 
 
 @implementer(IBackend)

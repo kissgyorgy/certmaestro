@@ -1,5 +1,5 @@
 from os.path import expanduser, realpath
-from configparser import ConfigParser
+from configparser import ConfigParser, RawConfigParser
 
 
 class Config:
@@ -10,9 +10,6 @@ class Config:
         cfg = ConfigParser()
         cfg.read_file(open(path))
         self._cfg = cfg
-
-    def __str__(self):
-        return 'Certmaestro Config Path: {}\n'.format(realpath(self.path))
 
     def __repr__(self):
         return '<Certmaestro Config: %s>' % realpath(self.path)
@@ -30,9 +27,6 @@ class Config:
         with open(self.path, 'w') as configfile:
             self._cfg.write(configfile)
 
-    def delete(self):
-        ...
-
     @property
     def backend_name(self):
         return self._cfg.get('certmaestro', 'backend')
@@ -45,22 +39,24 @@ class Config:
 class DictLikeMixin:
     """Make backend config act like a dictionary."""
 
+    def __iter__(self):
+        return ((attr_name, getattr(self, attr_name))
+                for attr_name in self.__slots__)
+
     def __getitem__(self, name):
-        return self._section[name]
+        return getattr(self, name)
 
     def __setitem__(self, name, value):
-        self._section[name] = value
+        setattr(self, name, value)
 
 
-class section_param:
-    """Descriptor for backend configs to directly read from ConfigParser sections."""
+def getbool(value):
+    """Convert boolean values the same way as ConfigParser does."""
+    if value.lower() not in RawConfigParser.BOOLEAN_STATES:
+        raise ValueError('Not a boolean: %s' % value)
+    return RawConfigParser.BOOLEAN_STATES[value.lower()]
 
-    def __init__(self, name, default=None):
-        self.name = name
-        self.default = default
 
-    def __get__(self, obj, cls=None):
-        return obj._section.get(self.name, self.default)
-
-    def __set__(self, obj, value):
-        obj._section[self.name] = value
+def starts_with_http(instance, attribute, value):
+    if not value.startswith('http://') and not value.startswith('https://'):
+        raise ValueError('URL needs to start with http:// or https://')
