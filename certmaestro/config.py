@@ -7,9 +7,8 @@ class Config:
 
     def __init__(self, path=DEFAULT_PATH):
         self.path = path
-        cfg = ConfigParser()
-        cfg.read_file(open(path))
-        self._cfg = cfg
+        self._cfg = ConfigParser()
+        self._cfg.read_file(open(path))
 
     def __repr__(self):
         return '<Certmaestro Config: %s>' % realpath(self.path)
