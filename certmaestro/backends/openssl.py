@@ -1,8 +1,8 @@
 from zope.interface import implementer
-from .base import IConfig, IBackend
+from .base import IBackendConfig, IBackend
 
 
-@implementer(IConfig)
+@implementer(IBackendConfig)
 class OpenSSLConfig:
     ...
 

@@ -1,7 +1,7 @@
 from zope.interface import Interface, Attribute
 
 
-class IConfig(Interface):
+class IBackendConfig(Interface):
     check_config_requires = Attribute('Parameters required for initial connection')
     init_reqires = Attribute('Parameters required for the backend initialization')
 

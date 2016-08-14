@@ -2,10 +2,10 @@ from zope.interface import implementer
 import hvac
 from ..wrapper import Cert, Crl
 from ..config import section_param
-from .base import IConfig, IBackend
+from .base import IBackendConfig, IBackend
 
 
-@implementer(IConfig)
+@implementer(IBackendConfig)
 class VaultConfig:
     name = 'Vault'
     url = section_param('url', 'http://localhost:8200')
