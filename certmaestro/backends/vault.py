@@ -7,7 +7,7 @@ from .base import IBackendConfig, IBackend
 
 
 @implementer(IBackendConfig)
-@attr.s(slots=True)
+@attr.s(slots=True, cmp=False)
 class VaultConfig(DictLikeMixin):
     name = 'Vault'
 
