@@ -46,8 +46,9 @@ def main(ctx, config_path):
     while not backend.check_config():
         click.echo('Invalid Configuration parameters!')
         for param_name, question in backend.config.check_config_requires:
-            value = click.prompt(question, default=getattr(backend.config, param_name))
-            setattr(backend.config, param_name, value)
+            value = click.prompt(question, default=backend.config[param_name])
+            backend.config[param_name] = value
+
     ctx.obj = Obj(config, backend)
 
 
@@ -57,7 +58,7 @@ def init_backend(obj):
     """Initializes backend storage, settings roles, and generate CA."""
     required_params = dict()
     for param_name, question in obj.backend.config.init_requires:
-        default = getattr(obj.backend.config, param_name)
+        default = obj.backend.config[param_name]
         required_params[param_name] = click.prompt(question, default=default)
     obj.backend.init(**required_params)
     obj.config.save()

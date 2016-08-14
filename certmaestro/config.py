@@ -17,6 +17,12 @@ class Config:
     def __repr__(self):
         return '<Certmaestro Config: %s>' % realpath(self.path)
 
+    def __getitem__(self, name):
+        return self._cfg.get('certmaestro', name)
+
+    def __setitem__(self, name, value):
+        self._cfg.set('certmaestro', name, value)
+
     def reload(self):
         self._cfg.read(self.path)
 
@@ -34,6 +40,16 @@ class Config:
     @property
     def backend_config(self):
         return self._cfg[self.backend_name]
+
+
+class DictLikeMixin:
+    """Make backend config act like a dictionary."""
+
+    def __getitem__(self, name):
+        return self._section[name]
+
+    def __setitem__(self, name, value):
+        self._section[name] = value
 
 
 class section_param:

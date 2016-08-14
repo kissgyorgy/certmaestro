@@ -1,12 +1,12 @@
 from zope.interface import implementer
 import hvac
 from ..wrapper import Cert, Crl
-from ..config import section_param
+from ..config import section_param, DictLikeMixin
 from .base import IBackendConfig, IBackend
 
 
 @implementer(IBackendConfig)
-class VaultConfig:
+class VaultConfig(DictLikeMixin):
     name = 'Vault'
     url = section_param('url', 'http://localhost:8200')
     common_name = section_param('common_name')
