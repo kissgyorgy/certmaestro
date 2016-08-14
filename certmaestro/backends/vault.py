@@ -3,7 +3,7 @@ import hvac
 import attr
 from ..wrapper import Cert, Crl
 from ..config import DictLikeMixin, starts_with_http, getbool
-from .base import IBackendConfig, IBackend
+from .interfaces import IBackendConfig, IBackend
 
 
 @implementer(IBackendConfig)
