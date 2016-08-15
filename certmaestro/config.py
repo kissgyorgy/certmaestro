@@ -27,12 +27,12 @@ class Config:
             self._cfg.write(configfile)
 
     @property
-    def backend_name(self):
+    def backend_section(self):
         return self._cfg.get('certmaestro', 'backend')
 
     @property
     def backend_config(self):
-        return self._cfg[self.backend_name]
+        return self._cfg[self.backend_section]
 
 
 def getbool(value):

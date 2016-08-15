@@ -13,6 +13,11 @@ class Cert:
     def __init__(self, pem_data):
         self._cert = x509.load_pem_x509_certificate(pem_data.encode('utf8'), default_backend())
 
+    @classmethod
+    def from_file(cls, path):
+        with open(path) as f:
+            return cls(f.read())
+
     def __str__(self):
         return '{}  {}  {}'.format(self.coloned_serial[:14], self.common_name, self.expiration)
 
