@@ -1,3 +1,4 @@
+from ..exceptions import BackendConfigurationError, BackendError
 from .file import FileConfig, FileBackend
 from .mysql import MySQLConfig, MySQLBackend
 from .openssl import OpenSSLConfig, OpenSSLBackend
@@ -15,7 +16,13 @@ BACKENDS = {
 
 
 def get_backend(config):
-    BackendConfig, BackendCls = BACKENDS[config.backend_name]
-    backend_config = BackendConfig(**config.backend_config)
-    backend = BackendCls(backend_config)
-    return backend
+    BackendConfig, BackendCls = BACKENDS[config.backend_section]
+    try:
+        backend_config = BackendConfig(**config.backend_config)
+        return BackendCls(backend_config)
+    except (ValueError, BackendConfigurationError, BackendError) as e:
+        defaults = BackendConfig.get_defaults()
+        defaults.update(config.backend_config)
+        required = BackendConfig.required
+        raise BackendConfigurationError(backend_name=BackendConfig.name, message=str(e),
+                                        required=required, defaults=defaults)

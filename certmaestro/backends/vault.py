@@ -1,14 +1,16 @@
 from zope.interface import implementer
 import hvac
 import attr
+from requests.exceptions import RequestException
+from ..exceptions import BackendConfigurationError, BackendError
 from ..wrapper import Cert, Crl
-from ..config import DictLikeMixin, starts_with_http, getbool
+from ..config import starts_with_http, getbool
 from .interfaces import IBackendConfig, IBackend
 
 
 @implementer(IBackendConfig)
 @attr.s(slots=True, cmp=False)
-class VaultConfig(DictLikeMixin):
+class VaultConfig:
     name = 'Vault'
 
     common_name = attr.ib()
@@ -21,11 +23,9 @@ class VaultConfig(DictLikeMixin):
     allow_subdomains = attr.ib(default=True, convert=getbool)
     role_max_ttl = attr.ib(default=72, convert=int)
 
-    check_config_requires = [
+    required = [
         ('url', 'URL of the Vault server'),
         ('token', 'Token for accessing Vault'),
-    ]
-    init_requires = [
         ('common_name', 'Common Name for root certificate'),
         ('mount_point', "Mount point of the 'pki' secret backend"),
         ('max_lease_ttl', 'Max lease ttl (hours)'),
@@ -35,6 +35,11 @@ class VaultConfig(DictLikeMixin):
         ('role_max_ttl', 'Role max ttl (hours)'),
     ]
 
+    @classmethod
+    def get_defaults(cls):
+        return {att.name: att.default for att in cls.__attrs_attrs__
+                if att.default is not attr.NOTHING}
+
 
 @implementer(IBackend)
 class VaultBackend:
@@ -43,8 +48,14 @@ class VaultBackend:
         self.config = config
         self._client = hvac.Client(self.config.url, self.config.token)
 
-    def check_config(self):
-        return self._client.is_authenticated()
+        try:
+            is_authenticated = self._client.is_authenticated()
+        except RequestException as e:
+            # Every kind of error which happened during connecting to Vault
+            raise BackendError(str(e))
+
+        if not is_authenticated:
+            raise BackendConfigurationError('Invalid connection credentials!')
 
     def __str__(self):
         return '<VaultBackend: {}>\n'.format(self.config.url)

@@ -3,7 +3,7 @@ import functools
 import click
 import requests
 from tabulate import tabulate
-from certmaestro import Config, get_backend
+from certmaestro import Config, BackendConfigurationError, get_backend
 
 
 Obj = namedtuple('Obj', 'config, backend')
@@ -42,12 +42,20 @@ def main(ctx, config_path):
     except FileNotFoundError:
         return
 
-    backend = get_backend(config)
-    while not backend.check_config():
-        click.echo('Invalid Configuration parameters!')
-        for param_name, question in backend.config.check_config_requires:
-            value = click.prompt(question, default=backend.config[param_name])
-            backend.config[param_name] = value
+    while True:
+        try:
+            backend = get_backend(config)
+        except BackendConfigurationError as bce:
+            click.echo('Something is wrong with the {} backend configuration:\n  * {}'
+                       .format(bce.backend_name, bce.message))
+            if not click.confirm('Would you like to reconfigure the %s backend?'
+                                 % bce.backend_name):
+                ctx.abort()
+
+            for param_name, question in bce.required:
+                value = click.prompt(question, default=bce.defaults.get(param_name))
+                config.backend_config[param_name] = str(value)
+            click.echo()
 
     ctx.obj = Obj(config, backend)
 

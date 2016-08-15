@@ -35,20 +35,6 @@ class Config:
         return self._cfg[self.backend_name]
 
 
-class DictLikeMixin:
-    """Make backend config act like a dictionary."""
-
-    def __iter__(self):
-        return ((attr_name, getattr(self, attr_name))
-                for attr_name in self.__slots__)
-
-    def __getitem__(self, name):
-        return getattr(self, name)
-
-    def __setitem__(self, name, value):
-        setattr(self, name, value)
-
-
 def getbool(value):
     """Convert boolean values the same way as ConfigParser does."""
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
