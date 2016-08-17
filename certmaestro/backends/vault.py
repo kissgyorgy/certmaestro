@@ -2,7 +2,7 @@ from zope.interface import implementer
 import hvac
 import attr
 from requests.exceptions import RequestException
-from ..exceptions import BackendConfigurationError, BackendError
+from ..exceptions import BackendError
 from ..wrapper import Cert, Crl
 from ..config import starts_with_http, getbool
 from .interfaces import IBackendConfig, IBackend
@@ -55,7 +55,7 @@ class VaultBackend:
             raise BackendError(str(e))
 
         if not is_authenticated:
-            raise BackendConfigurationError('Invalid connection credentials!')
+            raise BackendError('Invalid connection credentials!')
 
     def __str__(self):
         return '<VaultBackend: {}>\n'.format(self.config.url)

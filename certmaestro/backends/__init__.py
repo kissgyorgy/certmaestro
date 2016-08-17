@@ -20,7 +20,7 @@ def get_backend(config):
     try:
         backend_config = BackendConfig(**config.backend_config)
         return BackendCls(backend_config)
-    except (ValueError, BackendConfigurationError, BackendError) as e:
+    except (ValueError, BackendError) as e:
         defaults = BackendConfig.get_defaults()
         defaults.update(config.backend_config)
         required = BackendConfig.required
