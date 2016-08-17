@@ -13,19 +13,41 @@ def needs_config(command):
     @functools.wraps(command)
     def wrapper(*args, **kwargs):
         ctx = click.get_current_context()
-        if ctx.obj is not None:
-            return command(*args, **kwargs)
+        root_ctx = ctx.find_root()
 
-        if click.confirm('This command needs configuration and an initialized backend!\n'
-                         'Do you want to initialize one now?'):
-            ctx.invoke(init_backend)
-        else:
-            ctx.abort()
+        try:
+            config = Config(root_ctx.params['config_path'])
+        except FileNotFoundError:
+            if click.confirm('This command needs configuration and an initialized backend!\n'
+                             'Do you want to initialize one now?'):
+                ctx.invoke(init_backend)
+            else:
+                ctx.abort()
 
-        if click.confirm('Do you want to run the %s command now?' % ctx.command.name):
-            return command(*args, **kwargs)
-        else:
-            ctx.abort()
+        is_reconfigured = False
+        while True:
+            try:
+                backend = get_backend(config)
+                break
+            except BackendConfigurationError as bce:
+                is_reconfigured = True
+                click.echo('Something is wrong with the {} backend configuration:\n  * {}'
+                           .format(bce.backend_name, bce.message))
+                if not click.confirm('Would you like to reconfigure it?'):
+                    ctx.abort()
+
+                for param_name, question in bce.required:
+                    value = click.prompt(question, default=bce.defaults.get(param_name))
+                    config.backend_config[param_name] = str(value)
+                click.echo()
+
+        if is_reconfigured:
+            config.save()
+            click.echo('Configuration saved successfully.')
+            if not click.confirm('Do you want to run the %s command now?' % ctx.command.name):
+                ctx.abort()
+
+        ctx.obj = Obj(config, backend)
 
     return wrapper
 
@@ -34,30 +56,8 @@ def needs_config(command):
 @click.option('--config', 'config_path', default=Config.DEFAULT_PATH,
               help='Default: ' + Config.DEFAULT_PATH,
               type=click.Path(dir_okay=False, writable=True, resolve_path=True))
-@click.pass_context
-def main(ctx, config_path):
+def main(config_path):
     """Certmaestro command line interface."""
-    try:
-        config = Config(config_path)
-    except FileNotFoundError:
-        return
-
-    while True:
-        try:
-            backend = get_backend(config)
-        except BackendConfigurationError as bce:
-            click.echo('Something is wrong with the {} backend configuration:\n  * {}'
-                       .format(bce.backend_name, bce.message))
-            if not click.confirm('Would you like to reconfigure the %s backend?'
-                                 % bce.backend_name):
-                ctx.abort()
-
-            for param_name, question in bce.required:
-                value = click.prompt(question, default=bce.defaults.get(param_name))
-                config.backend_config[param_name] = str(value)
-            click.echo()
-
-    ctx.obj = Obj(config, backend)
 
 
 @main.command('init-backend')
