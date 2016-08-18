@@ -1,22 +1,23 @@
-from collections import namedtuple
-import functools
 import click
 import requests
 from tabulate import tabulate
 from certmaestro import Config, BackendConfigurationError, get_backend
 
 
-Obj = namedtuple('Obj', 'config, backend')
+class Obj:
 
-
-def needs_config(command):
-    @functools.wraps(command)
-    def wrapper(*args, **kwargs):
+    def __init__(self):
         ctx = click.get_current_context()
+        self.config = self._get_config(ctx)
+        self.backend = self._get_backend(ctx)
+        if self.config.is_reconfigured:
+            self._save_config(ctx)
+
+    def _get_config(self, ctx):
         root_ctx = ctx.find_root()
 
         try:
-            config = Config(root_ctx.params['config_path'])
+            return Config(root_ctx.params['config_path'])
         except FileNotFoundError:
             if click.confirm('This command needs configuration and an initialized backend!\n'
                              'Do you want to initialize one now?'):
@@ -24,13 +25,12 @@ def needs_config(command):
             else:
                 ctx.abort()
 
-        is_reconfigured = False
+    def _get_backend(self, ctx):
         while True:
             try:
-                backend = get_backend(config)
-                break
+                return get_backend(self.config)
             except BackendConfigurationError as bce:
-                is_reconfigured = True
+                self.config.is_reconfigured = True
                 click.echo('Something is wrong with the {} backend configuration:\n  * {}'
                            .format(bce.backend_name, bce.message))
                 if not click.confirm('Would you like to reconfigure it?'):
@@ -38,18 +38,17 @@ def needs_config(command):
 
                 for param_name, question in bce.required:
                     value = click.prompt(question, default=bce.defaults.get(param_name))
-                    config.backend_config[param_name] = str(value)
+                    self.config.backend_config[param_name] = str(value)
                 click.echo()
 
-        if is_reconfigured:
-            config.save()
-            click.echo('Configuration saved successfully.')
-            if not click.confirm('Do you want to run the %s command now?' % ctx.command.name):
-                ctx.abort()
+    def _save_config(self, ctx):
+        self.config.save()
+        click.echo('Configuration saved successfully.')
+        if not click.confirm('Do you want to run the %s command now?' % ctx.command.name):
+            ctx.abort()
 
-        ctx.obj = Obj(config, backend)
 
-    return wrapper
+needs_config = click.make_pass_decorator(Obj, ensure=True)
 
 
 @click.group()

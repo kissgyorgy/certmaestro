@@ -9,6 +9,7 @@ class Config:
         self.path = path
         self._cfg = ConfigParser()
         self._cfg.read_file(open(path))
+        self.is_reconfigured = False
 
     def __repr__(self):
         return '<Certmaestro Config: %s>' % realpath(self.path)
