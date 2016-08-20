@@ -38,6 +38,8 @@ class Config:
 
 def getbool(value):
     """Convert boolean values the same way as ConfigParser does."""
+    if isinstance(value, bool):
+        return value
     if value.lower() not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError('Not a boolean: %s' % value)
     return RawConfigParser.BOOLEAN_STATES[value.lower()]
