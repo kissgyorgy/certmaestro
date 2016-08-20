@@ -2,6 +2,7 @@ import click
 import requests
 from tabulate import tabulate
 from certmaestro import Config, BackendConfigurationError, get_backend
+from certmaestro.backends import BACKENDS
 
 
 class Obj:
@@ -59,16 +60,35 @@ def main(config_path):
     """Certmaestro command line interface."""
 
 
+backend_choices = """\
+1. Vault (https://www.vaultproject.io)
+2. Letsencrypt (Behave as an ACME client)
+3. OpenSSL (OpenSSL command line tools with openssl.cnf, https://www.openssl.org)
+4. PostgreSQL (Storing certificates in a PostgreSQL database)
+5. MySQL (Storing certificates in a MySQL database)
+6. File\
+"""
+backend_names = ['vault', 'letsencrypt', 'openssl', 'postgres', 'mysql', 'file']
+
+
 @main.command('init-backend')
 @click.pass_obj
 def init_backend(obj):
     """Initializes backend storage, settings roles, and generate CA."""
-    required_params = dict()
-    for param_name, question in obj.backend.config.init_requires:
-        default = obj.backend.config[param_name]
-        required_params[param_name] = click.prompt(question, default=default)
-    obj.backend.init(**required_params)
-    obj.config.save()
+    click.echo(backend_choices)
+    backend_num = click.prompt('Please choose a backend [1-6]', type=click.IntRange(1, 6))
+    backend_name = backend_names[backend_num - 1]
+
+    params = dict()
+    Backend = BACKENDS[backend_name]
+    defaults = Backend.get_defaults()
+    for param_name, question in Backend.required:
+        default = defaults.get(param_name)
+        default = str(default) if default is not None else None
+        params[param_name] = click.prompt(question, default=default)
+    backend = Backend(**params)
+    backend.connect()
+    backend.init_config()
     click.echo('Successfully initialized backend. You can issue certificates now!')
 
 
