@@ -10,8 +10,8 @@ from .configparser import OpenSSLInterpolation
 @implementer(IBackendConfig)
 @attr.s(slots=True, cmp=False)
 class OpenSSLConfig:
-    name = "OpenSSL"
-
+    name = 'OpenSSL'
+    desc = 'OpenSSL (OpenSSL command line tools with openssl.cnf, https://www.openssl.org)'
     file_path = attr.ib()
     dir_path = attr.ib()
 
