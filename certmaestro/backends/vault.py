@@ -1,56 +1,32 @@
 from zope.interface import implementer
 import hvac
-import attr
 from requests.exceptions import RequestException
 from ..exceptions import BackendError
 from ..wrapper import Cert, Crl
-from ..config import starts_with_http, strtobool
-from .interfaces import IBackendConfig, IBackend
-
-
-@attr.s(slots=True, cmp=False)
-class VaultInitParams:
-    common_name = attr.ib()
-    allowed_domains = attr.ib()
-    mount_point = attr.ib(default='pki')
-    max_lease_ttl = attr.ib(default=87600, convert=int)
-    allow_subdomains = attr.ib(default=True, convert=strtobool)
-    role_max_ttl = attr.ib(default=72, convert=int)
-
-    help = [
-        ('common_name', 'Common Name for root certificate'),
-        ('max_lease_ttl', 'Max lease ttl (hours)'),
-        ('allowed_domains', 'Allowed domains'),
-        ('allow_subdomains', 'Allow subdomains?'),
-        ('role_max_ttl', 'Role max ttl (hours)'),
-    ]
-
-
-@implementer(IBackendConfig)
-@attr.s(slots=True, cmp=False)
-class VaultConfig:
-    role = attr.ib()
-    token = attr.ib(repr=False)
-    url = attr.ib(default='http://localhost:8200', validator=starts_with_http)
-    mount_point = attr.ib(default='pki')
-
-    help = [
-        ('url', 'URL of the Vault server'),
-        ('token', 'Token for accessing Vault'),
-        ('role', 'Role issuing certificates'),
-        ('mount_point', "Mount point of the 'pki' secret backend"),
-    ]
-
-    @classmethod
-    def get_defaults(cls):
-        return {att.name: att.default for att in cls.__attrs_attrs__
-                if att.default is not attr.NOTHING}
+from ..config import starts_with_http, strtobool, Param
+from .interfaces import IBackend
 
 
 @implementer(IBackend)
 class VaultBackend:
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"
+
+    init_requires = (
+        Param('url', default='http://localhost:8200', validator=starts_with_http,
+              help='URL of the Vault server'),
+        Param('token', help='Token for accessing Vault'),
+        Param('mount_point', default='pki', help="Mount point of the 'pki' secret backend"),
+        Param('role', help='Role issuing certificates'),
+    )
+
+    setup_requires = (
+        Param('common_name', help='Common Name for root certificate'),
+        Param('allowed_domains', help='Allowed domains'),
+        Param('max_lease_ttl', default=87600, convert=int, help='Max lease ttl (hours)'),
+        Param('allow_subdomains', default=True, convert=strtobool, help='Allow subdomains?'),
+        Param('role_max_ttl', default=72, convert=int, help='Role max TTL (hours)')
+    )
 
     def __init__(self, url, token, mount_point, role):
         self._client = hvac.Client(url, token)
