@@ -36,13 +36,14 @@ class Config:
         return self._cfg[self.backend_section]
 
 
-def getbool(value):
+def strtobool(value):
     """Convert boolean values the same way as ConfigParser does."""
     if isinstance(value, bool):
         return value
-    if value.lower() not in RawConfigParser.BOOLEAN_STATES:
+    value = value.lower()
+    if value not in RawConfigParser.BOOLEAN_STATES:
         raise ValueError('Not a boolean: %s' % value)
-    return RawConfigParser.BOOLEAN_STATES[value.lower()]
+    return RawConfigParser.BOOLEAN_STATES[value]
 
 
 def starts_with_http(instance, attribute, value):

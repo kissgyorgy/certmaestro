@@ -4,7 +4,7 @@ import attr
 from requests.exceptions import RequestException
 from ..exceptions import BackendError
 from ..wrapper import Cert, Crl
-from ..config import starts_with_http, getbool
+from ..config import starts_with_http, strtobool
 from .interfaces import IBackendConfig, IBackend
 
 
@@ -19,7 +19,7 @@ class VaultConfig:
     url = attr.ib(default='http://localhost:8200', validator=starts_with_http)
     mount_point = attr.ib(default='pki')
     max_lease_ttl = attr.ib(default=87600, convert=int)
-    allow_subdomains = attr.ib(default=True, convert=getbool)
+    allow_subdomains = attr.ib(default=True, convert=strtobool)
     role_max_ttl = attr.ib(default=72, convert=int)
 
     required = [
