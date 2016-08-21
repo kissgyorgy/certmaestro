@@ -61,6 +61,7 @@ def main(config_path):
 
 
 backend_choices = """\
+@main.command('setup-backend')
 1. Vault (https://www.vaultproject.io)
 2. Letsencrypt (Behave as an ACME client)
 3. OpenSSL (OpenSSL command line tools with openssl.cnf, https://www.openssl.org)
@@ -71,9 +72,8 @@ backend_choices = """\
 backend_names = ['vault', 'letsencrypt', 'openssl', 'postgres', 'mysql', 'file']
 
 
-@main.command('init-backend')
 @click.pass_obj
-def init_backend(obj):
+def setup_backend(obj):
     """Initializes backend storage, settings roles, and generate CA."""
     click.echo(backend_choices)
     backend_num = click.prompt('Please choose a backend [1-6]', type=click.IntRange(1, 6))

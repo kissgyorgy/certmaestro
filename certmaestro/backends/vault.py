@@ -66,7 +66,7 @@ class VaultBackend:
         url = '/sys/mounts/%s/tune' % self.mount_point
         return self._client.read(url)['max_lease_ttl']
 
-    def init(self, *, mount_point, max_lease_ttl, common_name, role, allowed_domains,
+    def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains,
              allow_subdomains, role_max_ttl):
         self._client.enable_secret_backend('pki', mount_point=mount_point)
         ttl = '%sh' % max_lease_ttl
