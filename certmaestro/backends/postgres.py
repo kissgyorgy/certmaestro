@@ -4,10 +4,10 @@ from .interfaces import IBackendConfig, IBackend
 
 @implementer(IBackendConfig)
 class PostgresConfig:
-    name = 'PostgreSQL'
-    desc = 'Storing certificates in a PostgreSQL database'
+    ...
 
 
 @implementer(IBackend)
 class PostgresBackend:
-    ...
+    name = 'PostgreSQL'
+    description = 'Storing certificates in a PostgreSQL database'

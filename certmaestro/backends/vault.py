@@ -11,8 +11,6 @@ from .interfaces import IBackendConfig, IBackend
 @implementer(IBackendConfig)
 @attr.s(slots=True, cmp=False)
 class VaultConfig:
-    name = 'Vault'
-    desc = "Hashicorp's Vault: https://www.vaultproject.io"
 
     common_name = attr.ib()
     token = attr.ib(repr=False)
@@ -44,6 +42,8 @@ class VaultConfig:
 
 @implementer(IBackend)
 class VaultBackend:
+    name = 'Vault'
+    description = "Hashicorp's Vault: https://www.vaultproject.io"
 
     def __init__(self, config: VaultConfig):
         self.config = config
