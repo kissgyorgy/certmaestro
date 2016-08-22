@@ -3,30 +3,14 @@ import hvac
 from requests.exceptions import RequestException
 from ..exceptions import BackendError
 from ..wrapper import Cert, Crl
-from ..config import starts_with_http, strtobool, Param
-from .interfaces import IBackend
+from ..config import starts_with_http, strtobool, Param, BackendBuilder
+from .interfaces import IBackendBuilder, IBackend
 
 
 @implementer(IBackend)
 class VaultBackend:
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"
-
-    init_requires = (
-        Param('url', default='http://localhost:8200', validator=starts_with_http,
-              help='URL of the Vault server'),
-        Param('token', help='Token for accessing Vault'),
-        Param('mount_point', default='pki', help="Mount point of the 'pki' secret backend"),
-        Param('role', help='Role issuing certificates'),
-    )
-
-    setup_requires = (
-        Param('common_name', help='Common Name for root certificate'),
-        Param('allowed_domains', help='Allowed domains'),
-        Param('max_lease_ttl', default=87600, convert=int, help='Max lease ttl (hours)'),
-        Param('allow_subdomains', default=True, convert=strtobool, help='Allow subdomains?'),
-        Param('role_max_ttl', default=72, convert=int, help='Role max TTL (hours)')
-    )
 
     def __init__(self, url, token, mount_point, role):
         self._client = hvac.Client(url, token)
@@ -67,7 +51,8 @@ class VaultBackend:
                            allowed_domains=allowed_domains, allow_subdomains=allow_subdomains)
 
     def get_ca_cert(self) -> Cert:
-        return Cert(self._client.read('{}/ca/pem'.format(self.mount_point)))
+        res = self._client.read('{}/cert/ca'.format(self.mount_point))
+        return Cert(res['data']['certificate'])
 
     def issue_cert(self, common_name):
         issue_url = '{}/issue/{}'.format(self.mount_point, self.role)
@@ -91,3 +76,24 @@ class VaultBackend:
         res = self._client.read('{}/cert/crl'.format(self.mount_point))
         pem_data = res['data']['certificate']
         return Crl(pem_data)
+
+
+@implementer(IBackendBuilder)
+class VaultBackendBuilder(BackendBuilder):
+    backend_class = VaultBackend
+
+    init_requires = (
+        Param('url', default='http://localhost:8200', validator=starts_with_http,
+              help='URL of the Vault server'),
+        Param('token', help='Token for accessing Vault'),
+        Param('mount_point', default='pki', help="Mount point of the 'pki' secret backend"),
+        Param('role', help='Role issuing certificates'),
+    )
+
+    setup_requires = (
+        Param('common_name', help='Common Name for root certificate'),
+        Param('allowed_domains', help='Allowed domains'),
+        Param('max_lease_ttl', default=87600, convert=int, help='Max lease ttl (hours)'),
+        Param('allow_subdomains', default=True, convert=strtobool, help='Allow subdomains?'),
+        Param('role_max_ttl', default=72, convert=int, help='Role max TTL (hours)')
+    )

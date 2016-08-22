@@ -1,11 +1,11 @@
 from zope.interface import Interface, Attribute
 
 
-class IBackendConfig(Interface):
-    required = Attribute('Parameters required for initial connection')
-
-    def get_defaults(self):
-        """Return a dict with parameter_names and their default values."""
+class IBackendBuilder(Interface):
+    backend_class = Attribute()
+    init_requires = Attribute('Parameters required for backend initialization'
+                              'like url or file path')
+    setup_requires = Attribute('Parameters required for setting up backend for the first time')
 
 
 class IBackend(Interface):
