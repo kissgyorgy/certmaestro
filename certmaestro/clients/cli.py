@@ -73,22 +73,18 @@ backend_names = ['vault', 'letsencrypt', 'openssl', 'postgres', 'mysql', 'file']
 
 
 @click.pass_obj
-def setup_backend(obj):
+def setup_backend():
     """Initializes backend storage, settings roles, and generate CA."""
-    click.echo(backend_choices)
-    backend_num = click.prompt('Please choose a backend [1-6]', type=click.IntRange(1, 6))
-    backend_name = backend_names[backend_num - 1]
-
-    params = dict()
-    Backend = BACKENDS[backend_name]
-    defaults = Backend.get_defaults()
-    for param_name, question in Backend.required:
-        default = defaults.get(param_name)
-        default = str(default) if default is not None else None
-        params[param_name] = click.prompt(question, default=default)
-    backend = Backend(**params)
-    backend.connect()
-    backend.init_config()
+    builder = BackendBuilder(VaultBackend)
+    while True:
+        for param_name, question, default in builder:
+            value = click.prompt(question, default=default)
+            builder[param_name] = value
+        if not builder.is_valid():
+            break
+        else:
+            click.echo('\nSomething is wrong with the configuration!')
+    backend = builder.setup_backend()
     click.echo('Successfully initialized backend. You can issue certificates now!')
 
 
