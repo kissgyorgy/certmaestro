@@ -1,21 +1,12 @@
 from zope.interface import Interface, Attribute
 
 
-class IBackendBuilder(Interface):
-    backend_class = Attribute()
+class IBackend(Interface):
     init_requires = Attribute('Parameters required for backend initialization'
                               'like url or file path')
     setup_requires = Attribute('Parameters required for setting up backend for the first time')
 
-
-class IBackend(Interface):
-
-    def check_config(self):
-        """Integrity and other checks if everything is ok with the configuration.
-        e.g. Can connect, every file are there, checksums are ok, etc.
-        """
-
-    def init(self, **kwargs):
+    def setup(self, **kwargs):
         """Initialize configuration with backend specific parameters."""
 
     def get_ca_cert(self):

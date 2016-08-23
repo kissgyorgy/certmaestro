@@ -68,6 +68,9 @@ class Param:
 class BackendBuilder:
     """Helps to setup the backend by the defined Params in init_requires and setup_requires."""
 
+    def __init__(self, backend_class):
+        self._backend_class = backend_class
+
     def __iter__(self):
         return iter(self.init_requires + self.setup_requires)
 
@@ -76,6 +79,8 @@ class BackendBuilder:
             value = getattr(self, param.name, param.default)
             if value is None:
                 raise ValueError('Parameter %r is needed' % param.name)
+            if param.convert is not None:
+                value = param.convert(value)
             if param.validator is None:
                 continue
             param.validator(value)
@@ -96,6 +101,14 @@ class BackendBuilder:
         return getattr(self, name, None)
 
     @property
+    def init_requires(self):
+        return self._backend_class.init_requires
+
+    @property
+    def setup_requires(self):
+        return self._backend_class.setup_requires
+
+    @property
     def all_params(self):
         return {par.name: getattr(self, par.name, par.default) for par in self}
 
@@ -108,6 +121,6 @@ class BackendBuilder:
         return {par.name: getattr(self, par.name, par.default) for par in self.setup_requires}
 
     def setup_backend(self):
-        backend = self.backend_class(**self.init_params)
+        backend = self._backend_class(**self.init_params)
         backend.setup(**self.setup_params)
         return backend
