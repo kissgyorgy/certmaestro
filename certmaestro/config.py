@@ -61,8 +61,10 @@ class Param:
     convert = attr.ib(default=None)
 
     def __iter__(self):
-        default = str(self.default) if self.default is not None else None
-        return iter([self.name, self.help, default])
+        return iter([self.name, self.help, self.default])
+
+    def copy(self):
+        return self.__class__(**attr.asdict(self))
 
 
 class BackendBuilder:
@@ -70,9 +72,15 @@ class BackendBuilder:
 
     def __init__(self, backend_class):
         self._backend_class = backend_class
+        # to avoid accidentally changing params on the backend class
+        self.init_requires = tuple(p.copy() for p in backend_class.init_requires)
+        self.setup_requires = tuple(p.copy() for p in backend_class.setup_requires)
 
     def __iter__(self):
-        return iter(self.init_requires + self.setup_requires)
+        for param in (self.init_requires + self.setup_requires):
+            values = attr.asdict(param)
+            values['default'] = getattr(self, param.name, param.default)
+            yield Param(**values)
 
     def validate(self):
         for param in self:
@@ -93,20 +101,12 @@ class BackendBuilder:
             return False
 
     def __setitem__(self, name, value):
-        if name not in (p.name for p in self):
+        if name not in (param.name for param in self):
             raise AttributeError('Name %r is not found in this builder' % name)
         super().__setattr__(name, value)
 
     def __getitem__(self, name):
         return getattr(self, name, None)
-
-    @property
-    def init_requires(self):
-        return self._backend_class.init_requires
-
-    @property
-    def setup_requires(self):
-        return self._backend_class.setup_requires
 
     @property
     def all_params(self):
