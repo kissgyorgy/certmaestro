@@ -75,23 +75,24 @@ class BackendBuilder:
         # to avoid accidentally changing params on the backend class
         self.init_requires = tuple(p.copy() for p in backend_class.init_requires)
         self.setup_requires = tuple(p.copy() for p in backend_class.setup_requires)
+        self._values = dict()
 
     def __iter__(self):
         for param in (self.init_requires + self.setup_requires):
             values = attr.asdict(param)
-            values['default'] = getattr(self, param.name, param.default)
+            values['default'] = self._values.get(param.name, param.default)
             yield Param(**values)
 
     def validate(self):
         for param in self:
-            value = getattr(self, param.name, param.default)
+            value = self._values.get(param.name, param.default)
             if value is None:
                 raise ValueError('Parameter %r is needed' % param.name)
             if param.convert is not None:
                 value = param.convert(value)
-            if param.validator is None:
-                continue
-            param.validator(value)
+                self._values[param.name] = value
+            if param.validator is not None:
+                param.validator(value)
 
     def is_valid(self):
         try:
@@ -103,22 +104,23 @@ class BackendBuilder:
     def __setitem__(self, name, value):
         if name not in (param.name for param in self):
             raise AttributeError('Name %r is not found in this builder' % name)
-        super().__setattr__(name, value)
+        # TODO: convert here?
+        self._values[name] = value
 
     def __getitem__(self, name):
-        return getattr(self, name, None)
+        return self._values.get(name)
 
     @property
     def all_params(self):
-        return {par.name: getattr(self, par.name, par.default) for par in self}
+        return {par.name: self._values.get(par.name, par.default) for par in self}
 
     @property
     def init_params(self):
-        return {par.name: getattr(self, par.name, par.default) for par in self.init_requires}
+        return {par.name: self._values.get(par.name, par.default) for par in self.init_requires}
 
     @property
     def setup_params(self):
-        return {par.name: getattr(self, par.name, par.default) for par in self.setup_requires}
+        return {par.name: self._values.get(par.name, par.default) for par in self.setup_requires}
 
     def setup_backend(self):
         backend = self._backend_class(**self.init_params)
