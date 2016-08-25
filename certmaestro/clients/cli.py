@@ -20,11 +20,9 @@ class Obj:
         try:
             return Config(root_ctx.params['config_path'])
         except FileNotFoundError:
-            if click.confirm('This command needs configuration and an initialized backend!\n'
-                             'Do you want to initialize one now?'):
-                ctx.invoke(init_backend)
-            else:
-                ctx.abort()
+            click.confirm('This command needs configuration and an initialized backend!\n'
+                          'Do you want to initialize one now?', abort=True)
+            ctx.invoke(setup_backend)
 
     def _get_backend(self, ctx):
         while True:
@@ -34,8 +32,7 @@ class Obj:
                 self.config.is_reconfigured = True
                 click.echo('Something is wrong with the {} backend configuration:\n  * {}'
                            .format(bce.backend_name, bce.message))
-                if not click.confirm('Would you like to reconfigure it?'):
-                    ctx.abort()
+                click.confirm('Would you like to reconfigure it?', abort=True)
 
                 for param_name, question in bce.required:
                     value = click.prompt(question, default=bce.defaults.get(param_name))
@@ -45,8 +42,7 @@ class Obj:
     def _save_config(self, ctx):
         self.config.save()
         click.echo('Configuration saved successfully.')
-        if not click.confirm('Do you want to run the %s command now?' % ctx.command.name):
-            ctx.abort()
+        click.confirm('Do you want to run the %s command now?' % ctx.command.name, abort=True)
 
 
 needs_config = click.make_pass_decorator(Obj, ensure=True)
