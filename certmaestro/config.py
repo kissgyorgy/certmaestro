@@ -1,4 +1,5 @@
-from os.path import expanduser, realpath
+from os import makedirs
+from os.path import expanduser, realpath, dirname
 from configparser import ConfigParser, RawConfigParser
 import attr
 
@@ -11,6 +12,20 @@ class Config:
         self._cfg = ConfigParser()
         self._cfg.read_file(open(path))
         self.is_reconfigured = False
+
+    @classmethod
+    def make_new(cls, path=None):
+        self = object.__new__(cls)
+        try:
+            makedirs(dirname(path))
+        except FileExistsError:
+            pass
+        path = path or cls.DEFAULT_PATH
+        self.path = path
+        self._cfg = ConfigParser()
+        self._cfg.add_section('certmaestro')
+        self.is_reconfigured = False
+        return self
 
     def __repr__(self):
         return '<Certmaestro Config: %s>' % realpath(self.path)
@@ -29,12 +44,17 @@ class Config:
             self._cfg.write(configfile)
 
     @property
-    def backend_section(self):
+    def backend_name(self):
         return self._cfg.get('certmaestro', 'backend')
+
+    @backend_name.setter
+    def backend_name(self, value):
+        self._cfg.add_section(value)
+        self._cfg.set('certmaestro', 'backend', value)
 
     @property
     def backend_config(self):
-        return self._cfg[self.backend_section]
+        return self._cfg[self.backend_name]
 
 
 def strtobool(value):

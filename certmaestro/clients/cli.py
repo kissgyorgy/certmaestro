@@ -60,31 +60,31 @@ def main(config_path):
     """Certmaestro command line interface."""
 
 
-backend_choices = """\
 @main.command('setup-backend')
-1. Vault (https://www.vaultproject.io)
-2. Letsencrypt (Behave as an ACME client)
-3. OpenSSL (OpenSSL command line tools with openssl.cnf, https://www.openssl.org)
-4. PostgreSQL (Storing certificates in a PostgreSQL database)
-5. MySQL (Storing certificates in a MySQL database)
-6. File\
-"""
-backend_names = ['vault', 'letsencrypt', 'openssl', 'postgres', 'mysql', 'file']
-
-
-@click.pass_obj
-def setup_backend():
+@click.pass_context
+def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
     builder = BackendBuilder(VaultBackend)
     while True:
         for param_name, question, default in builder:
             value = click.prompt(question, default=default)
             builder[param_name] = value
-        if not builder.is_valid():
+        try:
+            builder.validate()
             break
-        else:
-            click.echo('\nSomething is wrong with the configuration!')
+        except ValueError as e:
+            click.echo('\nSomething is wrong with the configuration: %s' % e)
     backend = builder.setup_backend()
+    config_path = ctx.parent.params['config_path']
+    if os.path.exists(config_path):
+         click.confirm('\nConfiguration file already exists: %s'
+                       '\nDo you want to replace it?' % config_path, abort=True)
+    config = Config.make_new(config_path)
+    config.backend_name = backend.name
+    str_values = {k : str(v) for k, v in builder.init_params.items()}
+    config.backend_config.update(str_values)
+    config.save()
+    click.echo('Saved configuration to %s' % config_path)
     click.echo('Successfully initialized backend. You can issue certificates now!')
 
 
