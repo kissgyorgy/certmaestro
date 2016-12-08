@@ -89,12 +89,12 @@ class Param:
 class BackendBuilder:
     """Helps to setup the backend by the defined Params in init_requires and setup_requires."""
 
-    def __init__(self, backend_class):
+    def __init__(self, backend_class, default_values=None):
         self._backend_class = backend_class
         # to avoid accidentally changing params on the backend class
         self.init_requires = tuple(p.copy() for p in backend_class.init_requires)
         self.setup_requires = tuple(p.copy() for p in backend_class.setup_requires)
-        self._values = dict()
+        self._values = default_values or dict()
 
     def __iter__(self):
         for param in (self.init_requires + self.setup_requires):

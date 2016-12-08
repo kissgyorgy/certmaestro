@@ -2,48 +2,44 @@ from os.path import exists
 import click
 import requests
 from tabulate import tabulate
-from certmaestro import Config, BackendConfigurationError, get_backend
-from certmaestro.backends import BACKENDS
+from certmaestro import Config
+from certmaestro.backends import VaultBackend, BACKENDS
+from certmaestro.config import BackendBuilder
+from certmaestro.exceptions import BackendError
 
 
 class Obj:
 
     def __init__(self):
-        ctx = click.get_current_context()
-        self.config = self._get_config(ctx)
-        self.backend = self._get_backend(ctx)
+        self.ctx = click.get_current_context()
+        self.config = self._get_config()
+        self.backend = self._get_backend()
         if self.config.is_reconfigured:
-            self._save_config(ctx)
+            self.config.save()
+            click.echo('Configuration saved successfully.')
+            click.confirm('Do you want to run the %s command now?' % self.ctx.command.name,
+                          abort=True)
 
-    def _get_config(self, ctx):
-        root_ctx = ctx.find_root()
-
+    def _get_config(self):
+        root_ctx = self.ctx.find_root()
         try:
             return Config(root_ctx.params['config_path'])
         except FileNotFoundError:
             click.confirm('This command needs configuration and an initialized backend!\n'
                           'Do you want to initialize one now?', abort=True)
-            ctx.invoke(setup_backend)
+            self.ctx.obj = self
+            self.ctx.invoke(setup_backend)
 
-    def _get_backend(self, ctx):
-        while True:
-            try:
-                return get_backend(self.config)
-            except BackendConfigurationError as bce:
-                self.config.is_reconfigured = True
-                click.echo('Something is wrong with the {} backend configuration:\n  * {}'
-                           .format(bce.backend_name, bce.message))
-                click.confirm('Would you like to reconfigure it?', abort=True)
-
-                for param_name, question in bce.required:
-                    value = click.prompt(question, default=bce.defaults.get(param_name))
-                    self.config.backend_config[param_name] = str(value)
-                click.echo()
-
-    def _save_config(self, ctx):
-        self.config.save()
-        click.echo('Configuration saved successfully.')
-        click.confirm('Do you want to run the %s command now?' % ctx.command.name, abort=True)
+    def _get_backend(self):
+        Backend = BACKENDS[self.config.backend_name]
+        try:
+            return Backend(**self.config.backend_config)
+        except BackendError as exc:
+            click.echo('Something is wrong with the {} backend configuration:\n  * {}'
+                       .format(Backend.name, exc))
+            click.confirm('Would you like to reconfigure it?', abort=True)
+            self.ctx.obj = self
+            self.ctx.invoke(setup_backend)
 
 
 ensure_config = click.make_pass_decorator(Obj, ensure=True)

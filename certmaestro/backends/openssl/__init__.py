@@ -1,38 +1,30 @@
 from os.path import exists, isdir
 from configparser import ConfigParser
 from zope.interface import implementer
-import attr
-from ..interfaces import IBackendConfig, IBackend
+from ..interfaces import IBackend
 from ...wrapper import Cert
 from .configparser import OpenSSLInterpolation
 
 
-@implementer(IBackendConfig)
-@attr.s(slots=True, cmp=False)
-class OpenSSLConfig:
+@implementer(IBackend)
+class OpenSSLBackend:
     name = 'OpenSSL'
-    desc = 'OpenSSL (OpenSSL command line tools with openssl.cnf, https://www.openssl.org)'
-    file_path = attr.ib()
-    dir_path = attr.ib()
+    description = 'command line tools with openssl.cnf, https://www.openssl.org'
 
-    check_config_requires = [
+    init_requires = [
         ('file_path', 'Path to the openssl config file (usually openssl.cnf)'),
         ('dir_path', 'Path to the default_ca directory '
          '(dir value in the openss.cnf)')
     ]
 
-
-@implementer(IBackend)
-class OpenSSLBackend:
-
-    def __init__(self, config):
-        self.config = config
-
+    def __init__(self, file_path, dir_path):
+        self._file_path = file_path
+        self._dir_path = dir_path
         self._cnf = ConfigParser(interpolation=OpenSSLInterpolation)
-        self._cnf.read_file(open(config.file_path))
+        self._cnf.read_file(open(file_path))
 
     def check_config(self):
-        if exists(self.config.file_path) and isdir(self.config.dir_path):
+        if exists(self._file_path) and isdir(self._dir_path):
             return True
         return False
 
