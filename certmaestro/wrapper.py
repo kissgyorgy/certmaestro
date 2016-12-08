@@ -5,7 +5,14 @@
 import datetime as dt
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from .helpers import hexify
+
+
+def hexify(serial_number: int):
+    """Convert an integer to a colon separated, uppercase hexadecimal value."""
+    serial = hex(serial_number)[2:]
+    if len(serial) % 2 == 1:
+        serial = '0' + serial
+    return ':'.join(serial[i:i+2] for i in range(0, len(serial), 2))
 
 
 class Cert:
