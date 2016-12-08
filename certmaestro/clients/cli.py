@@ -61,6 +61,11 @@ def main(config_path):
 @click.pass_context
 def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
+    config_path = ctx.parent.params['config_path']
+    if exists(config_path):
+        click.confirm('Configuration file already exists: %s'
+                      '\nDo you want to replace it?' % config_path, abort=True)
+
     builder = BackendBuilder(VaultBackend)
 
     while True:
@@ -74,12 +79,6 @@ def setup_backend(ctx):
             click.echo('\nSomething is wrong with the configuration: %s' % e)
 
     backend = builder.setup_backend()
-    config_path = ctx.parent.params['config_path']
-
-    if exists(config_path):
-        click.confirm('\nConfiguration file already exists: %s'
-                      '\nDo you want to replace it?' % config_path, abort=True)
-
     config = Config.make_new(config_path)
     config.backend_name = backend.name
     str_values = {k: str(v) for k, v in builder.init_params.items()}
