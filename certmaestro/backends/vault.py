@@ -46,14 +46,14 @@ class VaultBackend:
         return '<VaultBackend: %s>\n' % self._url
 
     def _get_max_lease_ttl(self):
-        return self._client.read('/sys/mounts/%s/tune' % self.mount_point)['max_lease_ttl']
+        tune_url = '/sys/mounts/%s/tune' % self.mount_point
+        return self._client.read(tune_url)['max_lease_ttl']
 
     def _get_settings(self):
         role_url = '{}/roles/{}'.format(self.mount_point, self.role)
         return self._client.read(role_url)['data']
 
-    def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains,
-              role_max_ttl):
+    def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains, role_max_ttl):  # noqa
         self._client.enable_secret_backend('pki', mount_point=self.mount_point)
         ttl = '%sh' % max_lease_ttl
         # vault mount-tune -max-lease-ttl=87600h pki

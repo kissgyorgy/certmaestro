@@ -2,8 +2,7 @@ from zope.interface import Interface, Attribute
 
 
 class IBackend(Interface):
-    init_requires = Attribute('Parameters required for backend initialization'
-                              'like url or file path')
+    init_requires = Attribute('Parameters required for backend initializationlike url or file path')  # noqa
     setup_requires = Attribute('Parameters required for setting up backend for the first time')
 
     def setup(self, **kwargs):

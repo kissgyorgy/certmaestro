@@ -10,17 +10,16 @@ class Config:
     def __init__(self, path=DEFAULT_PATH):
         self.path = path
         self._cfg = ConfigParser()
-        self._cfg.read_file(open(path))
+        self._cfg.read(path)
         self.is_reconfigured = False
 
     @classmethod
-    def make_new(cls, path=None):
+    def make_new(cls, path=DEFAULT_PATH):
         self = object.__new__(cls)
         try:
             makedirs(dirname(path))
         except FileExistsError:
             pass
-        path = path or cls.DEFAULT_PATH
         self.path = path
         self._cfg = ConfigParser()
         self._cfg.add_section('certmaestro')

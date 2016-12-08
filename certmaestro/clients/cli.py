@@ -1,3 +1,4 @@
+from os.path import exists
 import click
 import requests
 from tabulate import tabulate
@@ -45,7 +46,7 @@ class Obj:
         click.confirm('Do you want to run the %s command now?' % ctx.command.name, abort=True)
 
 
-needs_config = click.make_pass_decorator(Obj, ensure=True)
+ensure_config = click.make_pass_decorator(Obj, ensure=True)
 
 
 @click.group()
@@ -61,6 +62,7 @@ def main(config_path):
 def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
     builder = BackendBuilder(VaultBackend)
+
     while True:
         for param_name, question, default in builder:
             value = click.prompt(question, default=default)
@@ -70,14 +72,17 @@ def setup_backend(ctx):
             break
         except ValueError as e:
             click.echo('\nSomething is wrong with the configuration: %s' % e)
+
     backend = builder.setup_backend()
     config_path = ctx.parent.params['config_path']
-    if os.path.exists(config_path):
-         click.confirm('\nConfiguration file already exists: %s'
-                       '\nDo you want to replace it?' % config_path, abort=True)
+
+    if exists(config_path):
+        click.confirm('\nConfiguration file already exists: %s'
+                      '\nDo you want to replace it?' % config_path, abort=True)
+
     config = Config.make_new(config_path)
     config.backend_name = backend.name
-    str_values = {k : str(v) for k, v in builder.init_params.items()}
+    str_values = {k: str(v) for k, v in builder.init_params.items()}
     config.backend_config.update(str_values)
     config.save()
     click.echo('Saved configuration to %s' % config_path)
@@ -85,17 +90,13 @@ def setup_backend(ctx):
 
 
 @main.command('show-config')
-@click.pass_obj
-@needs_config
+@ensure_config
 def show_config(obj):
     """Shows saved configuration options."""
-    click.echo(obj.config)
-    click.echo(obj.backend.config)
 
 
 @main.command('issue-cert')
-@click.pass_obj
-@needs_config
+@ensure_config
 def issue_cert(obj):
     """Issue a new certificate."""
     common_name = click.prompt('Common name')
@@ -105,19 +106,17 @@ def issue_cert(obj):
 
 @main.command('show-cert')
 @click.argument('serial_number')
-@click.pass_obj
-@needs_config
+@ensure_config
 def show_cert(obj, serial_number):
     """View certificate details."""
     cert = obj.backend.get_cert(serial_number)
-    click.echo('Serial number:     %s' % cert.coloned_serial)
+    click.echo('Serial number:     %s' % cert.serial_number)
     click.echo('Common Name:       %s' % cert.common_name)
-    click.echo('Expires:           %s' % cert.expiration)
+    click.echo('Expires:           %s' % cert.expires)
 
 
 @main.command('list-certs')
-@click.pass_obj
-@needs_config
+@ensure_config
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
@@ -127,8 +126,7 @@ def list_certs(obj):
 
 @main.command('revoke-cert')
 @click.argument('serial_number')
-@click.pass_obj
-@needs_config
+@ensure_config
 def revoke_cert(obj, serial_number):
     """Revoke a certificate."""
     result = obj.backend.revoke_cert(serial_number)
@@ -136,15 +134,13 @@ def revoke_cert(obj, serial_number):
 
 
 @main.command('update-crl')
-@click.pass_obj
-@needs_config
+@ensure_config
 def update_crl(obj):
     """Update the Certificate Revocation List (CRL)."""
 
 
 @main.command('show-crl')
-@click.pass_obj
-@needs_config
+@ensure_config
 def show_crl(obj):
     """Show the Certificate Revocation List."""
     crl = obj.backend.get_crl()
@@ -159,8 +155,7 @@ def show_crl(obj):
 
 
 @main.command('deploy-cert')
-@click.pass_obj
-@needs_config
+@ensure_config
 def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 

@@ -3,6 +3,7 @@ from setuptools import setup
 
 install_requires = [
     'click',
+    'cryptography',
     'requests',
     'hvac[parser]',
     'zope.interface',
@@ -25,14 +26,14 @@ classifiers = [
 
 
 setup(
-      name='certmaestro',
-      version='0.1.0',
-      description='Certificate manager',
-      author='Kiss György',
-      author_email='kissgyorgy@me.com',
-      url='https://www.certmaestro.com',
-      license="MIT",
-      packages=['certmaestro'],
-      install_requires=install_requires,
-      entry_points={'console_scripts': console_scripts}
+    name='certmaestro',
+    version='0.1.0',
+    description='Certificate manager',
+    author='Kiss György',
+    author_email='kissgyorgy@me.com',
+    url='https://www.certmaestro.com',
+    license="MIT",
+    packages=['certmaestro'],
+    install_requires=install_requires,
+    entry_points={'console_scripts': console_scripts}
 )
