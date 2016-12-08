@@ -43,52 +43,51 @@ class VaultBackend:
             raise BackendError('Invalid connection credentials!')
 
     def __str__(self):
-        return '<VaultBackend: %s>\n' % self._url
+        return f'<VaultBackend: {self._url}>\n'
 
     def _get_max_lease_ttl(self):
-        tune_url = '/sys/mounts/%s/tune' % self.mount_point
+        tune_url = f'/sys/mounts/{self.mount_point}/tune'
         return self._client.read(tune_url)['max_lease_ttl']
 
     def _get_settings(self):
-        role_url = '{}/roles/{}'.format(self.mount_point, self.role)
+        role_url = f'{self.mount_point}/roles/{self.role}'
         return self._client.read(role_url)['data']
 
     def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains, role_max_ttl):  # noqa
         self._client.enable_secret_backend('pki', mount_point=self.mount_point)
-        ttl = '%sh' % max_lease_ttl
+        ttl = f'{max_lease_ttl}h'
         # vault mount-tune -max-lease-ttl=87600h pki
-        self._client.write('sys/mounts/{}/tune'.format(self.mount_point), max_lease_ttl=ttl)
-        self._client.write('{}/root/generate/internal'.format(self.mount_point),
+        self._client.write(f'sys/mounts/{self.mount_point}/tune', max_lease_ttl=ttl)
+        self._client.write(f'{self.mount_point}/root/generate/internal',
                            common_name=common_name, ttl=ttl)
         # $ vault write pki/roles/example-dot-com
         #       allowed_domains="example.com" allow_subdomains="true" max_ttl="72h"
-        max_ttl = '%sh' % role_max_ttl
-        self._client.write('{}/roles/{}'.format(self.mount_point, self.role), max_ttl=max_ttl,
+        max_ttl = f'{role_max_ttl}h'
+        self._client.write(f'{self.mount_point}/roles/{self.role}', max_ttl=max_ttl,
                            allowed_domains=allowed_domains, allow_subdomains=allow_subdomains)
 
     def get_ca_cert(self) -> Cert:
-        res = self._client.read('{}/cert/ca'.format(self.mount_point))
+        res = self._client.read(f'{self.mount_point}/cert/ca')
         return Cert(res['data']['certificate'])
 
     def issue_cert(self, common_name):
-        issue_url = '{}/issue/{}'.format(self.mount_point, self.role)
+        issue_url = f'{self.mount_point}/issue/{self.role}'
         return self._client.write(issue_url, common_name=common_name)
 
     def revoke_cert(self, serial_number):
-        return self._client.write('{}/revoke'.format(self.mount_point),
-                                  serial_number=serial_number)
+        return self._client.write(f'{self.mount_point}/revoke', serial_number=serial_number)
 
     def get_cert_list(self):
-        res = self._client.list('{}/certs'.format(self.mount_point))
+        res = self._client.list(f'{self.mount_point}/certs')
         for serial_number in res['data']['keys']:
             yield self.get_cert(serial_number)
 
     def get_cert(self, serial_number) -> Cert:
-        res = self._client.read('{}/cert/{}'.format(self.mount_point, serial_number))
+        res = self._client.read(f'{self.mount_point}/cert/{serial_number}')
         pem_data = res['data']['certificate']
         return Cert(pem_data)
 
     def get_crl(self) -> Crl:
-        res = self._client.read('{}/cert/crl'.format(self.mount_point))
+        res = self._client.read(f'{self.mount_point}/cert/crl')
         pem_data = res['data']['certificate']
         return Crl(pem_data)

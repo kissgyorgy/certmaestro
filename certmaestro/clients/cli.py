@@ -35,8 +35,8 @@ class Obj:
         try:
             return Backend(**self.config.backend_config)
         except BackendError as exc:
-            click.echo('Something is wrong with the {} backend configuration:\n  * {}'
-                       .format(Backend.name, exc))
+            click.echo(f'Something is wrong with the {Backend.name} '
+                       f'backend configuration:\n  * {exc}')
             click.confirm('Would you like to reconfigure it?', abort=True)
             self.ctx.obj = self
             self.ctx.invoke(setup_backend)
@@ -59,8 +59,8 @@ def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
     config_path = ctx.parent.params['config_path']
     if exists(config_path):
-        click.confirm('Configuration file already exists: %s'
-                      '\nDo you want to replace it?' % config_path, abort=True)
+        click.confirm(f'Configuration file already exists: {config_path}\n'
+                      'Do you want to replace it?', abort=True)
 
     builder = BackendBuilder(VaultBackend)
 
@@ -72,7 +72,7 @@ def setup_backend(ctx):
             builder.validate()
             break
         except ValueError as e:
-            click.echo('\nSomething is wrong with the configuration: %s' % e)
+            click.echo(f'\nSomething is wrong with the configuration: {e}')
 
     backend = builder.setup_backend()
     config = Config.make_new(config_path)
@@ -80,8 +80,8 @@ def setup_backend(ctx):
     str_values = {k: str(v) for k, v in builder.init_params.items()}
     config.backend_config.update(str_values)
     config.save()
-    click.echo('Saved configuration to %s' % config_path)
-    click.echo('Successfully initialized backend. You can issue certificates now!')
+    click.echo(f'Saved configuration to {config_path}')
+    click.echo(f'Successfully initialized {backend.name}. You can issue certificates now!')
 
 
 @main.command('show-config')
@@ -105,9 +105,9 @@ def issue_cert(obj):
 def show_cert(obj, serial_number):
     """View certificate details."""
     cert = obj.backend.get_cert(serial_number)
-    click.echo('Serial number:     %s' % cert.serial_number)
-    click.echo('Common Name:       %s' % cert.common_name)
-    click.echo('Expires:           %s' % cert.expires)
+    click.echo(f'Serial number:     {cert.serial_number}')
+    click.echo(f'Common Name:       {cert.common_name}')
+    click.echo(f'Expires:           {cert.expires}')
 
 
 @main.command('list-certs')
@@ -139,9 +139,9 @@ def update_crl(obj):
 def show_crl(obj):
     """Show the Certificate Revocation List."""
     crl = obj.backend.get_crl()
-    click.echo('Issuer Common Name:    %s' % crl.issuer)
-    click.echo('Last update:           %s' % crl.last_update)
-    click.echo('Next update:           %s' % crl.next_update)
+    click.echo(f'Issuer Common Name:    {crl.issuer}')
+    click.echo(f'Last update:           {crl.last_update}')
+    click.echo(f'Next update:           {crl.next_update}')
     click.echo()
     headers = ['Revocation Date', 'Invalidity Date', 'Reason', 'Serial Number']
     revoked_certs = ((rc.revocation_date, rc.invalidity_date, rc.reason, rc.serial_number)
@@ -169,7 +169,7 @@ def check_site(ctx, url):
     if not url.startswith('https://'):
         url = 'https://' + url
 
-    click.echo('Checking %s ...' % url)
+    click.echo(f'Checking {url} ...')
 
     try:
         requests.head(url)  # noqa

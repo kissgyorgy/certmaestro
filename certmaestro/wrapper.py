@@ -19,7 +19,7 @@ class Cert:
             return cls(f.read())
 
     def __str__(self):
-        return '{}  {}  {}'.format(self.coloned_serial[:14], self.common_name, self.expiration)
+        return f'{self.coloned_serial[:14]}  {self.common_name}  {self.expiration}'
 
     @property
     def common_name(self):

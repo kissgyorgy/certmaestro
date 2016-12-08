@@ -16,10 +16,7 @@ class Config:
     @classmethod
     def make_new(cls, path=DEFAULT_PATH):
         self = object.__new__(cls)
-        try:
-            makedirs(dirname(path))
-        except FileExistsError:
-            pass
+        makedirs(dirname(path), exist_ok=True)
         self.path = path
         self._cfg = ConfigParser()
         self._cfg.add_section('certmaestro')
@@ -27,7 +24,8 @@ class Config:
         return self
 
     def __repr__(self):
-        return '<Certmaestro Config: %s>' % realpath(self.path)
+        full_path = expanduser(realpath(self.path))
+        return f'<Certmaestro Config: {full_path}>'
 
     def __getitem__(self, name):
         return self._cfg.get('certmaestro', name)
@@ -62,7 +60,7 @@ def strtobool(value):
         return value
     value = value.lower()
     if value not in RawConfigParser.BOOLEAN_STATES:
-        raise ValueError('Not a boolean: %s' % value)
+        raise ValueError(f'Not a boolean: {value}')
     return RawConfigParser.BOOLEAN_STATES[value]
 
 
