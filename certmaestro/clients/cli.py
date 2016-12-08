@@ -14,11 +14,6 @@ class Obj:
         self.ctx = click.get_current_context()
         self.config = self._get_config()
         self.backend = self._get_backend()
-        if self.config.is_reconfigured:
-            self.config.save()
-            click.echo('Configuration saved successfully.')
-            click.confirm('Do you want to run the %s command now?' % self.ctx.command.name,
-                          abort=True)
 
     def _get_config(self):
         root_ctx = self.ctx.find_root()

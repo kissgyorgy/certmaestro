@@ -11,7 +11,6 @@ class Config:
         self.path = path
         self._cfg = ConfigParser()
         self._cfg.read(path)
-        self.is_reconfigured = False
 
     @classmethod
     def make_new(cls, path=DEFAULT_PATH):
@@ -20,7 +19,6 @@ class Config:
         self.path = path
         self._cfg = ConfigParser()
         self._cfg.add_section('certmaestro')
-        self.is_reconfigured = False
         return self
 
     def __repr__(self):
