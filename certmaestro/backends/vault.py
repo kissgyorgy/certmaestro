@@ -71,8 +71,7 @@ class VaultBackend:
         return Cert(res['data']['certificate'])
 
     def issue_cert(self, common_name):
-        issue_url = f'{self.mount_point}/issue/{self.role}'
-        return self._client.write(issue_url, common_name=common_name)
+        return self._client.write(f'{self.mount_point}/issue/{self.role}', common_name=common_name)
 
     def revoke_cert(self, serial_number):
         return self._client.write(f'{self.mount_point}/revoke', serial_number=serial_number)
