@@ -30,14 +30,15 @@ class VaultBackend:
 
     def __init__(self, url, token, mount_point, role):
         self._client = hvac.Client(url, token)
-        self.mount_point = mount_point
+        # normalize mount_point to naked, so we can consistently use in strings
+        self.mount_point = mount_point[:-1] if mount_point.endswith('/') else mount_point
         self.role = role
 
         try:
             is_authenticated = self._client.is_authenticated()
         except RequestException as e:
             # Every kind of error which happened during connecting to Vault
-            raise BackendError(str(e))
+            raise BackendError('Could not connect to Vault server. Check address and credentials!')
 
         if not is_authenticated:
             raise BackendError('Invalid connection credentials!')
@@ -52,6 +53,12 @@ class VaultBackend:
     def _get_settings(self):
         role_url = f'{self.mount_point}/roles/{self.role}'
         return self._client.read(role_url)['data']
+
+    def validate_setup(self, **setup_params):
+        """Check if setup would be successful."""
+        secret_backends = self._client.list_secret_backends()
+        if f'{self.mount_point}/' in secret_backends['data']:
+            raise ValueError('Secret backend already exists!')
 
     def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains, role_max_ttl):  # noqa
         self._client.enable_secret_backend('pki', mount_point=self.mount_point)

@@ -2,6 +2,7 @@ from os import makedirs
 from os.path import expanduser, realpath, dirname
 from configparser import ConfigParser, RawConfigParser
 import attr
+from .exceptions import BackendError
 
 
 class Config:
@@ -100,6 +101,11 @@ class BackendBuilder:
             yield Param(**values)
 
     def validate(self):
+        self._validate_params()
+        backend = self._validate_init()
+        backend.validate_setup(**self.setup_params)
+
+    def _validate_params(self):
         for param in self:
             value = self._values.get(param.name, param.default)
             if value is None:
@@ -109,6 +115,12 @@ class BackendBuilder:
                 self._values[param.name] = value
             if param.validator is not None:
                 param.validator(value)
+
+    def _validate_init(self):
+        try:
+            return self._backend_class(**self.init_params)
+        except BackendError as e:
+            raise ValueError(str(e))
 
     def is_valid(self):
         try:
