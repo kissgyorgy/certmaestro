@@ -23,16 +23,22 @@ class Obj:
             click.confirm('This command needs configuration and an initialized backend!\n'
                           'Do you want to initialize one now?', abort=True)
             self.ctx.invoke(setup_backend)
+            if not click.confirm(f'\nDo you want to run the "{self.ctx.info_name}" command now?'):
+                self.ctx.exit()
+            return Config(root_ctx.params['config_path'])
 
     def _get_backend(self):
         Backend = BACKENDS[self.config.backend_name]
-        try:
-            return Backend(**self.config.backend_config)
-        except BackendError as exc:
-            click.echo(f'Something is wrong with the {Backend.name} '
-                       f'backend configuration:\n  * {exc}')
-            click.confirm('Would you like to reconfigure it?', abort=True)
-            self.ctx.invoke(setup_backend)
+        while True:
+            try:
+                return Backend(**self.config.backend_config)
+            except BackendError as exc:
+                click.echo(f'Something is wrong with the {Backend.name} '
+                           f'backend configuration:\n  * {exc}')
+                click.confirm('Would you like to reconfigure it?', abort=True)
+                self.ctx.invoke(setup_backend)
+                if not click.confirm(f'\nDo you want to run the "{self.ctx.info_name}" command now?'):
+                    self.ctx.exit()
 
 
 ensure_config = click.make_pass_decorator(Obj, ensure=True)
