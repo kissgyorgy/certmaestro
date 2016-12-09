@@ -10,7 +10,8 @@ class Config:
     def __init__(self, path=DEFAULT_PATH):
         self.path = path
         self._cfg = ConfigParser()
-        self._cfg.read(path)
+        with open(path) as f:
+            self._cfg.read_file(f)
 
     @classmethod
     def make_new(cls, path=DEFAULT_PATH):
