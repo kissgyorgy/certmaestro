@@ -97,7 +97,7 @@ def issue_cert(obj):
 @ensure_config
 def show_cert(obj, serial_number):
     """View certificate details."""
-    cert = obj.backend.get_cert(serial_number)
+    cert = obj.backend.get_cert(serial_number.lower())
     click.echo(f'Serial number:     {cert.serial_number}')
     click.echo(f'Common Name:       {cert.common_name}')
     click.echo(f'Expires:           {cert.expires}')
