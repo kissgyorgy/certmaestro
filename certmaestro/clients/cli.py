@@ -22,7 +22,6 @@ class Obj:
         except FileNotFoundError:
             click.confirm('This command needs configuration and an initialized backend!\n'
                           'Do you want to initialize one now?', abort=True)
-            self.ctx.obj = self
             self.ctx.invoke(setup_backend)
 
     def _get_backend(self):
@@ -33,7 +32,6 @@ class Obj:
             click.echo(f'Something is wrong with the {Backend.name} '
                        f'backend configuration:\n  * {exc}')
             click.confirm('Would you like to reconfigure it?', abort=True)
-            self.ctx.obj = self
             self.ctx.invoke(setup_backend)
 
 
@@ -52,7 +50,7 @@ def main(config_path):
 @click.pass_context
 def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
-    config_path = ctx.parent.params['config_path']
+    config_path = ctx.find_root().params['config_path']
     if exists(config_path):
         click.confirm(f'Configuration file already exists: {config_path}\n'
                       'Do you want to replace it?', abort=True)
