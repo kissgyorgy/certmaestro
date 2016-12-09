@@ -64,8 +64,8 @@ def setup_backend(ctx):
         try:
             builder.validate()
             break
-        except ValueError as e:
-            click.echo(f'\nSomething is wrong with the configuration: {e}')
+        except ValueError as exc:
+            click.echo(f'\nSomething is wrong with the configuration:\n  * {exc}')
 
     backend = builder.setup_backend()
     config = Config.make_new(config_path)
