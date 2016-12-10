@@ -90,13 +90,11 @@ class VaultBackend:
 
     def get_cert(self, serial_number) -> Cert:
         res = self._client.read(f'{self.mount_point}/cert/{serial_number}')
-        pem_data = res['data']['certificate']
-        return Cert(pem_data)
+        return Cert(res['data']['certificate'])
 
     def get_crl(self) -> Crl:
         res = self._client.read(f'{self.mount_point}/cert/crl')
-        pem_data = res['data']['certificate']
-        return Crl(pem_data)
+        return Crl(res['data']['certificate'])
 
     @property
     def version(self) -> str:

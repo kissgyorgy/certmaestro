@@ -87,7 +87,7 @@ def setup_backend(ctx):
 @main.command('show-config')
 @ensure_config
 def show_config(obj):
-    """Shows saved configuration options."""
+    """Show saved configuration options."""
 
 
 @main.command('issue-cert')
@@ -103,7 +103,7 @@ def issue_cert(obj):
 @click.argument('serial_number')
 @ensure_config
 def show_cert(obj, serial_number):
-    """View certificate details."""
+    """Show certificate details."""
     cert = obj.backend.get_cert(serial_number.lower())
     click.echo(f'Serial number:     {cert.serial_number}')
     click.echo(f'Common Name:       {cert.common_name}')

@@ -3,8 +3,8 @@ from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert
 from ...config import Param
-from ..interfaces import IBackend
 from ...exceptions import BackendError
+from ..interfaces import IBackend
 from .parser import OpenSSLConfigParser
 
 
@@ -15,15 +15,15 @@ class OpenSSLBackend:
 
     init_requires = (
         Param('config_path', help='Path to the openssl config file (usually openssl.cnf)'),
-        Param('root_dir', help='Working directory of the files. Relative directory definitions '
-                               'in config file are compared to this.')
+        Param('root_dir', help='Working directory for the OpenSSL files and directories. Relative '
+                               'directory definitions in config file are compared to this.')
     )
 
     def __init__(self, config_path, root_dir):
-        # raise BackendError on bad paths
         if not isdir(root_dir):
             raise BackendError('Root dir is not a directory')
         self._root_dir = root_dir
+
         if not isfile(config_path):
             raise BackendError('Config path is not a file')
         self._config_path = config_path
