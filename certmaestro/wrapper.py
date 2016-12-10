@@ -82,6 +82,11 @@ class Crl:
     def __init__(self, pem_data):
         self._crl = x509.load_pem_x509_crl(pem_data.encode('utf8'), default_backend())
 
+    @classmethod
+    def from_file(cls, path):
+        with open(path) as f:
+            return cls(f.read())
+
     def __iter__(self):
         return iter(RevokedCert(r) for r in self._crl)
 
