@@ -110,6 +110,16 @@ def show_cert(obj, serial_number):
     click.echo(f'Expires:           {cert.expires}')
 
 
+@main.command('show-ca-cert')
+@ensure_config
+def show_ca_cert(obj):
+    """Show CA certificate details."""
+    cert = obj.backend.get_ca_cert()
+    click.echo(f'Serial number:     {cert.serial_number}')
+    click.echo(f'Common Name:       {cert.common_name}')
+    click.echo(f'Expires:           {cert.expires}')
+
+
 @main.command('list-certs')
 @ensure_config
 def list_certs(obj):
