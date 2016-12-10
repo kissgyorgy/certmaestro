@@ -1,6 +1,7 @@
 from os.path import exists
 import click
 import requests
+import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
 from certmaestro.backends import VaultBackend, BACKENDS
@@ -177,3 +178,13 @@ def check_site(ctx, url):
         ctx.exit(1)
 
     click.echo('Certificate is valid!')
+
+
+@main.command()
+@ensure_config
+def version(obj):
+    """Certmaestro and backend versions."""
+    certmaestro_version = pkg_resources.get_distribution('certmaestro').version
+    click.echo(f'Certmaestro version:   {certmaestro_version}')
+    click.echo(f'Configured backend:    {obj.backend.name}')
+    click.echo(f'Backend version:       {obj.backend.version}')

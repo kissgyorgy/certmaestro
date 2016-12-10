@@ -1,5 +1,6 @@
 from os.path import isfile, isdir, join
 from zope.interface import implementer
+from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert
 from ...config import Param
 from ..interfaces import IBackend
@@ -35,3 +36,7 @@ class OpenSSLBackend:
         ca_section = self._cnf[ca_section_name]
         ca_cert_path = join(self._root_dir, ca_section['certificate'])
         return Cert.from_file(ca_cert_path)
+
+    @property
+    def version(self) -> str:
+        return openssl_backend.openssl_version_text()

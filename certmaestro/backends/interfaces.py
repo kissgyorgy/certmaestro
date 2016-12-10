@@ -4,6 +4,7 @@ from zope.interface import Interface, Attribute
 class IBackend(Interface):
     init_requires = Attribute('Params required for backend init like url or file path')
     setup_requires = Attribute('Param required for setting up backend for the first time')
+    version = Attribute('Backend software or library version.')
 
     def validate_setup(self, **kwargs):
         """Check if setup would be successful."""

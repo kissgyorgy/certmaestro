@@ -97,3 +97,8 @@ class VaultBackend:
         res = self._client.read(f'{self.mount_point}/cert/crl')
         pem_data = res['data']['certificate']
         return Crl(pem_data)
+
+    @property
+    def version(self):
+        health_data = self._client.read('/sys/health')
+        return health_data['version']
