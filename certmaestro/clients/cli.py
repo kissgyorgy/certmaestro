@@ -4,7 +4,7 @@ import requests
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
-from certmaestro.backends import VaultBackend, BACKENDS
+from certmaestro.backends import get_backend, get_backend_cls, enumerate_backends
 from certmaestro.config import BackendBuilder
 from certmaestro.exceptions import BackendError
 
@@ -29,12 +29,11 @@ class Obj:
             return Config(root_ctx.params['config_path'])
 
     def _get_backend(self):
-        Backend = BACKENDS[self.config.backend_name]
         while True:
             try:
-                return Backend(**self.config.backend_config)
+                return get_backend(self.config)
             except BackendError as exc:
-                click.echo(f'Something is wrong with the {Backend.name} '
+                click.echo(f'Something is wrong with the {self.config.backend_name} '
                            f'backend configuration:\n  * {exc}')
                 click.confirm('Would you like to reconfigure it?', abort=True)
                 self.ctx.invoke(setup_backend)
@@ -72,8 +71,16 @@ def setup_backend(ctx):
     if exists(config_path):
         click.confirm(f'Configuration file already exists: {config_path}\n'
                       'Do you want to replace it?', abort=True)
+        click.echo()
 
-    builder = BackendBuilder(VaultBackend)
+    click.echo('Backend choices:')
+    for choice, name, description in enumerate_backends():
+        click.echo(f'{choice}. {name} - {description}')
+
+    backend_choice = click.prompt('Which backend do you want to set up (1-5)?', default=1)
+    click.echo()
+    BackendCls = get_backend_cls(backend_choice)
+    builder = BackendBuilder(BackendCls)
 
     while True:
         for param_name, question, default in builder:
@@ -216,8 +223,7 @@ def version(ctx):
         is_configured = False
 
     if is_configured:
-        Backend = BACKENDS[config.backend_name]
-        backend = Backend(**config.backend_config)
+        backend = get_backend(config)
         click.echo(f'Backend version:       {backend.version}')
     else:
         click.echo(f'Backend is not configured yet or invalid config path')
