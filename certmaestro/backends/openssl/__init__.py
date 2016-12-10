@@ -1,3 +1,4 @@
+from os import listdir
 from os.path import isfile, isdir, join
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
@@ -37,12 +38,27 @@ class OpenSSLBackend:
         with open(config_path) as f:
             self._cnf.read_file(f)
 
-    def get_ca_cert(self):
+    @property
+    def _ca_section(self):
         ca_section_name = self._cnf['ca']['default_ca']
-        ca_section = self._cnf[ca_section_name]
-        ca_cert_path = join(self._root_dir, ca_section['certificate'])
+        return self._cnf[ca_section_name]
+
+    @property
+    def _new_certs_dir(self):
+        return join(self._root_dir, self._ca_section['new_certs_dir'])
+
+    def get_ca_cert(self):
+        ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
         return Cert.from_file(ca_cert_path)
 
+    def get_cert(self, serial_number) -> Cert:
+        cert_path = join(self._new_certs_dir, f'{serial_number}.pem')
+        return Cert.from_file(cert_path)
+
+    def get_cert_list(self):
+        for cert_filename in listdir(self._new_certs_dir):
+            cert_path = join(self._new_certs_dir, cert_filename)
+            yield Cert.from_file(cert_path)
 
     def get_crl(self):
         return Crl.from_file(self._crl_path)
