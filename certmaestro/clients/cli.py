@@ -45,12 +45,23 @@ class Obj:
 ensure_config = click.make_pass_decorator(Obj, ensure=True)
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.option('--config', 'config_path', default=Config.DEFAULT_PATH,
               help='Default: ' + Config.DEFAULT_PATH,
               type=click.Path(dir_okay=False, writable=True, resolve_path=True))
-def main(config_path):
+@click.option('-V', '--version', 'show_version', is_flag=True, is_eager=True,
+              help='Show Certmaestro and backend versions.')
+@click.pass_context
+def main(ctx, config_path, show_version):
     """Certmaestro command line interface."""
+    # Only way to get backend, because we need config_path. With a callback,
+    # it would run before the main method so there would be no config_path
+    if show_version:
+        ctx.invoke(version)
+        ctx.exit()
+    elif not ctx.invoked_subcommand:
+        help_text = ctx.command.get_help(ctx)
+        click.echo(help_text)
 
 
 @main.command('setup-backend')
@@ -191,10 +202,22 @@ def check_site(ctx, url):
 
 
 @main.command()
-@ensure_config
-def version(obj):
-    """Certmaestro and backend versions."""
+@click.pass_context
+def version(ctx):
+    """Same as --version."""
     certmaestro_version = pkg_resources.get_distribution('certmaestro').version
     click.echo(f'Certmaestro version:   {certmaestro_version}')
-    click.echo(f'Configured backend:    {obj.backend.name}')
-    click.echo(f'Backend version:       {obj.backend.version}')
+
+    root_ctx = ctx.find_root()
+    try:
+        config = Config(root_ctx.params['config_path'])
+        is_configured = True
+    except FileNotFoundError:
+        is_configured = False
+
+    if is_configured:
+        Backend = BACKENDS[config.backend_name]
+        backend = Backend(**config.backend_config)
+        click.echo(f'Backend version:       {backend.version}')
+    else:
+        click.echo(f'Backend is not configured yet or invalid config path')
