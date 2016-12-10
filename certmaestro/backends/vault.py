@@ -99,6 +99,6 @@ class VaultBackend:
         return Crl(pem_data)
 
     @property
-    def version(self):
+    def version(self) -> str:
         health_data = self._client.read('/sys/health')
-        return health_data['version']
+        return self.name + ' ' + health_data['version']
