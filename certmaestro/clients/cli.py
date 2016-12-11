@@ -1,6 +1,9 @@
 from os.path import exists
+from queue import Queue
+from threading import Thread
 import click
 import requests
+from requests import exceptions as reqexc
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
@@ -183,6 +186,38 @@ def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 
 
+def _print_failed(message):
+    click.echo(click.style('Failed:   ' + message, fg='red'))
+
+def _print_valid(message):
+    click.echo(click.style('Valid:    ' + message, fg='green'))
+
+
+def _check_url(success_queue, skip_queue, fail_queue, url):
+    if url.startswith('https://'):
+        pass
+    elif '://' in url:
+        click.echo(f'Skipped:  {url} (not https://)')
+        skip_queue.put(True)
+        return
+    else:
+        url = 'https://' + url
+
+    try:
+        requests.head(url)
+        _print_valid(url)
+        success_queue.put(True)
+    except reqexc.SSLError as e:
+        _print_failed(f'{url} ({e})')
+        fail_queue.put(True)
+    except reqexc.ConnectionError as e:
+        message = e.args[0].reason.args[0]
+        cut_error_type = slice(message.find(': ') + 2, None)
+        short_message = message[cut_error_type]
+        _print_failed(f'{url} ({short_message})')
+        fail_queue.put(True)
+
+
 @main.command('check-site', short_help='Check website(s) certificate(s).')
 @click.argument('urls', metavar='[SITE1] [SITE2] [...]', nargs=-1)
 @click.pass_context
@@ -199,31 +234,28 @@ def check_site(ctx, urls):
     if not urls:
         raise click.UsageError('You need to provide at least one site to check!')
 
-    success_count = 0
-    skip_count = 0
-    fail_count = 0
+    success_queue = Queue()
+    skip_queue = Queue()
+    fail_queue = Queue()
+    threads = []
 
-    for url in urls:
-        if url.startswith('https://'):
-            pass
-        elif '://' in url:
-            click.echo(f'Skipping {url} (not https://)')
-            skip_count += 1
-            continue
-        else:
-            url = 'https://' + url
+    # deduplicate
+    for url in set(urls):
+        thread = Thread(target=_check_url, args=(success_queue, fail_queue, skip_queue, url))
+        threads.append(thread)
+        thread.daemon = True
+        thread.start()
 
-        click.echo(f'Checking {url}... ', nl=False)
-        try:
-            requests.head(url)
-            click.echo('certificate is valid!')
-            success_count += 1
-        except requests.exceptions.SSLError as e:
-            click.echo(str(e))
-            fail_count += 1
+    for thread in threads:
+        thread.join()
 
-    click.echo(f'Total: {len(urls)}, success: {success_count}, '
-               f'skipped: {skip_count}, failed: {fail_count}.')
+    success_count = success_queue.qsize()
+    skip_count = skip_queue.qsize()
+    fail_count = fail_queue.qsize()
+    total_message = click.style(f'Total: {len(urls)}', fg='blue')
+    success_message = click.style(f'success: {success_count}', fg='green')
+    failed_message = click.style(f'failed: {fail_count}.', fg='red')
+    click.echo(f'{total_message}, {success_message}, skipped: {skip_count}, {failed_message}')
 
     if fail_count > 0:
         exitcode = 2
