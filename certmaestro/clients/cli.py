@@ -193,12 +193,6 @@ class CheckSiteThread(Thread):
         self.skipped = False
         self.failed = False
 
-    def _print_failed(self, message):
-        click.echo(click.style('Failed:   ' + message, fg='red'))
-
-    def _print_valid(self, message):
-        click.echo(click.style('Valid:    ' + message, fg='green'))
-
     def run(self):
         url = self.url
         if url.startswith('https://'):
@@ -212,17 +206,16 @@ class CheckSiteThread(Thread):
 
         try:
             requests.head(url)
-            # FIXME: click.secho
-            self._print_valid(url)
+            click.secho(f'Valid:     {url}', fg='green')
             self.succeeded = True
         except reqexc.SSLError as e:
-            self._print_failed(f'{url} ({e})')
+            click.secho(f'Failed:    {url} ({e})', fg='red')
             self.failed = True
         except reqexc.ConnectionError as e:
             message = e.args[0].reason.args[0]
             cut_error_type = slice(message.find(': ') + 2, None)
             short_message = message[cut_error_type]
-            self._print_failed(f'{url} ({short_message})')
+            click.secho(f'Failed:    {url} ({short_message})', fg='red')
             self.failed = True
 
 
