@@ -1,5 +1,4 @@
 from os.path import exists
-from queue import Queue
 from threading import Thread
 import click
 import requests
@@ -186,36 +185,45 @@ def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 
 
-def _print_failed(message):
-    click.echo(click.style('Failed:   ' + message, fg='red'))
+class CheckSiteThread(Thread):
+    def __init__(self, url):
+        super().__init__(daemon=True)
+        self.url = url
+        self.succeeded = False
+        self.skipped = False
+        self.failed = False
 
-def _print_valid(message):
-    click.echo(click.style('Valid:    ' + message, fg='green'))
+    def _print_failed(self, message):
+        click.echo(click.style('Failed:   ' + message, fg='red'))
 
+    def _print_valid(self, message):
+        click.echo(click.style('Valid:    ' + message, fg='green'))
 
-def _check_url(success_queue, skip_queue, fail_queue, url):
-    if url.startswith('https://'):
-        pass
-    elif '://' in url:
-        click.echo(f'Skipped:  {url} (not https://)')
-        skip_queue.put(True)
-        return
-    else:
-        url = 'https://' + url
+    def run(self):
+        url = self.url
+        if url.startswith('https://'):
+            pass
+        elif '://' in url:
+            click.echo(f'Skipped:  {url} (not https://)')
+            self.skipped = True
+            return
+        else:
+            url = 'https://' + url
 
-    try:
-        requests.head(url)
-        _print_valid(url)
-        success_queue.put(True)
-    except reqexc.SSLError as e:
-        _print_failed(f'{url} ({e})')
-        fail_queue.put(True)
-    except reqexc.ConnectionError as e:
-        message = e.args[0].reason.args[0]
-        cut_error_type = slice(message.find(': ') + 2, None)
-        short_message = message[cut_error_type]
-        _print_failed(f'{url} ({short_message})')
-        fail_queue.put(True)
+        try:
+            requests.head(url)
+            # FIXME: click.secho
+            self._print_valid(url)
+            self.succeeded = True
+        except reqexc.SSLError as e:
+            self._print_failed(f'{url} ({e})')
+            self.failed = True
+        except reqexc.ConnectionError as e:
+            message = e.args[0].reason.args[0]
+            cut_error_type = slice(message.find(': ') + 2, None)
+            short_message = message[cut_error_type]
+            self._print_failed(f'{url} ({short_message})')
+            self.failed = True
 
 
 @main.command('check-site', short_help='Check website(s) certificate(s).')
@@ -234,24 +242,20 @@ def check_site(ctx, urls):
     if not urls:
         raise click.UsageError('You need to provide at least one site to check!')
 
-    success_queue = Queue()
-    skip_queue = Queue()
-    fail_queue = Queue()
     threads = []
 
     # deduplicate
     for url in set(urls):
-        thread = Thread(target=_check_url, args=(success_queue, fail_queue, skip_queue, url))
+        thread = CheckSiteThread(url)
         threads.append(thread)
-        thread.daemon = True
         thread.start()
 
     for thread in threads:
         thread.join()
 
-    success_count = success_queue.qsize()
-    skip_count = skip_queue.qsize()
-    fail_count = fail_queue.qsize()
+    success_count = sum(1 for t in threads if t.succeeded)
+    skip_count = sum(1 for t in threads if t.skipped)
+    fail_count = sum(1 for t in threads if t.failed)
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
     success_message = click.style(f'success: {success_count}', fg='green')
     failed_message = click.style(f'failed: {fail_count}.', fg='red')
