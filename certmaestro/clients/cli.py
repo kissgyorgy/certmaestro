@@ -183,29 +183,56 @@ def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 
 
-def _validate_https(ctx, param, url):
-    if url.startswith('http://'):
-        raise click.BadParameter('Sorry, you need to provide an https:// website!')
-    return url
-
-
-@main.command('check-site')
-@click.argument('url', callback=_validate_https)
+@main.command('check-site', short_help='Check website(s) certificate(s).')
+@click.argument('urls', metavar='[SITE1] [SITE2] [...]', nargs=-1)
 @click.pass_context
-def check_site(ctx, url):
-    """Simple check if the website has a valid certificate."""
-    if not url.startswith('https://'):
-        url = 'https://' + url
+def check_site(ctx, urls):
+    """Checks if all of the websites have a valid certificate.
+    Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
 
-    click.echo(f'Checking {url} ...')
+    \b
+    Shell exitcode will be:
+        - 0 if every check succeeded
+        - 1 if there was an unknown protocol (not https://)
+        - 2 if at least one failed
+    """
+    if not urls:
+        raise click.UsageError('You need to provide at least one site to check!')
 
-    try:
-        requests.head(url)  # noqa
-    except requests.exceptions.SSLError as e:
-        click.echo(str(e))
-        ctx.exit(1)
+    success_count = 0
+    skip_count = 0
+    fail_count = 0
 
-    click.echo('Certificate is valid!')
+    for url in urls:
+        if url.startswith('https://'):
+            pass
+        elif '://' in url:
+            click.echo(f'Skipping {url} (not https://)')
+            skip_count += 1
+            continue
+        else:
+            url = 'https://' + url
+
+        click.echo(f'Checking {url}... ', nl=False)
+        try:
+            requests.head(url)
+            click.echo('certificate is valid!')
+            success_count += 1
+        except requests.exceptions.SSLError as e:
+            click.echo(str(e))
+            fail_count += 1
+
+    click.echo(f'Total: {len(urls)}, success: {success_count}, '
+               f'skipped: {skip_count}, failed: {fail_count}.')
+
+    if fail_count > 0:
+        exitcode = 2
+    elif skip_count > 0:
+        exitcode = 1
+    else:
+        exitcode = 0
+
+    ctx.exit(exitcode)
 
 
 @main.command()
