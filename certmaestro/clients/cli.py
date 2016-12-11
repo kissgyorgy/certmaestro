@@ -1,8 +1,9 @@
 from os.path import exists
 from threading import Thread
 import click
-import requests
-from requests import exceptions as reqexc
+import certifi
+import urllib3
+from urllib3 import exceptions as u3exc
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
@@ -186,8 +187,10 @@ def deploy_cert(obj):
 
 
 class CheckSiteThread(Thread):
-    def __init__(self, url):
+    def __init__(self, http, redirect, url):
         super().__init__(daemon=True)
+        self.http = http
+        self.redirect = redirect
         self.url = url
         self.succeeded = False
         self.skipped = False
@@ -198,31 +201,47 @@ class CheckSiteThread(Thread):
         if url.startswith('https://'):
             pass
         elif '://' in url:
-            click.echo(f'Skipped:  {url} (not https://)')
+            click.echo(f'Skipped:   {url} (not https://)')
             self.skipped = True
             return
         else:
             url = 'https://' + url
 
         try:
-            requests.head(url)
+            self.http.request('HEAD', url, redirect=self.redirect)
             click.secho(f'Valid:     {url}', fg='green')
             self.succeeded = True
-        except reqexc.SSLError as e:
-            click.secho(f'Failed:    {url} ({e})', fg='red')
+
+        except u3exc.SSLError as e:
+            # example: "[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:749)"
+            message = e.args[0].args[-1]
+            start_ind = message.find(']')
+            if start_ind > -1:
+                start = start_ind + 2
+                end = message.find('(_ssl') - 1
+                message = message[start:end]
+            click.secho(f'Failed:    {url} ({message})', fg='red')
             self.failed = True
-        except reqexc.ConnectionError as e:
-            message = e.args[0].reason.args[0]
-            cut_error_type = slice(message.find(': ') + 2, None)
-            short_message = message[cut_error_type]
-            click.secho(f'Failed:    {url} ({short_message})', fg='red')
+
+        except (u3exc.MaxRetryError, u3exc.NewConnectionError) as e:
+            message = e.reason.args[0]
+            start_ind = message.find(': ')
+            if start_ind > -1:
+                cut_error_type = slice(start_ind + 2, None)
+                message = message[cut_error_type]
+            click.secho(f'Failed:    {url} ({message})', fg='red')
             self.failed = True
 
 
 @main.command('check-site', short_help='Check website(s) certificate(s).')
 @click.argument('urls', metavar='[SITE1] [SITE2] [...]', nargs=-1)
+@click.option('-t', '--timeout', default=3.0,
+              help='HTTP request timeout in seconds for individual requests.')
+@click.option('-r', '--retries', default=3)
+@click.option('-f', '--follow-redirects', 'redirect', is_flag=True,
+              help='Follow redirects (disabled by default).')
 @click.pass_context
-def check_site(ctx, urls):
+def check_site(ctx, urls, timeout, retries, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
 
@@ -235,20 +254,24 @@ def check_site(ctx, urls):
     if not urls:
         raise click.UsageError('You need to provide at least one site to check!')
 
-    threads = []
-
+    click.echo('Checking certificates...')
     # deduplicate
-    for url in set(urls):
-        thread = CheckSiteThread(url)
+    urls = set(urls)
+    # enable certificate verification with certifi (Mozilla CA bundle)
+    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(),
+                               num_pools=len(urls), timeout=timeout, maxsize=2, retries=retries)
+    threads = []
+    for url in urls:
+        thread = CheckSiteThread(http, redirect, url)
         threads.append(thread)
         thread.start()
 
     for thread in threads:
         thread.join()
 
-    success_count = sum(1 for t in threads if t.succeeded)
-    skip_count = sum(1 for t in threads if t.skipped)
-    fail_count = sum(1 for t in threads if t.failed)
+    success_count = sum(t.succeeded for t in threads)
+    skip_count = sum(t.skipped for t in threads)
+    fail_count = sum(t.failed for t in threads)
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
     success_message = click.style(f'success: {success_count}', fg='green')
     failed_message = click.style(f'failed: {fail_count}.', fg='red')

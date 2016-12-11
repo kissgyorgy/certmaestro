@@ -4,7 +4,7 @@ from setuptools import setup
 install_requires = [
     'click',
     'cryptography',
-    'requests',
+    'urllib3[secure]',  # this will install certifi
     'hvac[parser]',
     'zope.interface',
     'tabulate',
