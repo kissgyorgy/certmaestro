@@ -7,7 +7,7 @@ from configparser import (
 class OpenSSLInterpolation(Interpolation):
     """Interpolation that is able to handle OpenSSL's special $dir values."""
 
-    _KEYCRE = re.compile(r"\$(\w*)")
+    _KEYCRE = re.compile(r"\$\{?(\w*)\}?")
 
     def before_get(self, parser, section, option, value, defaults):
         ind = value.find('$')
