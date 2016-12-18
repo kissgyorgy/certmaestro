@@ -292,17 +292,12 @@ def check_site(ctx, urls, timeout, retries, redirect):
 def version(ctx):
     """Same as --version."""
     certmaestro_version = pkg_resources.get_distribution('certmaestro').version
-    click.echo(f'Certmaestro version:   {certmaestro_version}')
-
+    click.echo('Certmaestro ' + certmaestro_version)
     root_ctx = ctx.find_root()
     try:
         config = Config(root_ctx.params['config_path'])
-        is_configured = True
     except FileNotFoundError:
-        is_configured = False
-
-    if is_configured:
-        backend = get_backend(config)
-        click.echo(f'Backend version:       {backend.version}')
+        click.echo('Backend is not configured or invalid config path')
     else:
-        click.echo(f'Backend is not configured yet or invalid config path')
+        backend = get_backend(config)
+        click.echo('Backend: ' + backend.version)
