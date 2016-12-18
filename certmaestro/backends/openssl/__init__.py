@@ -1,5 +1,6 @@
-from os import listdir
+import os
 from os.path import isfile, isdir, join
+import subprocess
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert, Crl
@@ -15,15 +16,22 @@ class OpenSSLBackend:
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
 
     init_requires = (
+        Param('command_path', help='Path to the openssl binary'),
         Param('config_path', help='Path to the openssl config file (usually openssl.cnf)'),
         Param('root_dir', help='Working directory for the OpenSSL files and directories. Relative '
                                'directory definitions in config file are compared to this.'),
         Param('crl_path', help='Path to the Certificate Revocation List file (usually crl.pem)'),
     )
 
-    def __init__(self, config_path, root_dir, crl_path):
-        if not isdir(root_dir):
-            raise BackendError('Root dir is not a directory')
+    def __init__(self, command_path, config_path, root_dir, crl_path):
+        if not os.access(command_path, os.F_OK | os.X_OK):
+            raise BackendError('OpenSSL command is not executable')
+        self._command_path = command_path
+
+        try:
+            os.chdir(root_dir)
+        except FileNotFoundError as e:
+            raise BackendError(str(e))
         self._root_dir = root_dir
 
         if not isfile(config_path):
@@ -47,16 +55,36 @@ class OpenSSLBackend:
     def _new_certs_dir(self):
         return join(self._root_dir, self._ca_section['new_certs_dir'])
 
+    @property
+    def _certs_dir(self):
+        certs_dir = self._ca_section['certs']
+        if certs_dir:
+            return join(self._root_dir, certs_dir)
+        else:
+            return join(self._root_dir, self._ca_section['dir'], 'certs')
+
+    def _openssl_command(self, main_command, *params):
+        command = [self._command_path, main_command, '-config', self._config_path, *params]
+        subprocess.run(command)
+
     def get_ca_cert(self):
         ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
         return Cert.from_file(ca_cert_path)
+
+    def issue_cert(self, common_name):
+        basename = join(self._certs_dir, common_name)
+        key_path = basename + '.key'
+        csr_path = basename + '.csr'
+        crt_path = basename + '.crt'
+        self._openssl_command('req', '-newkey', 'rsa', '-keyout', key_path, '-out', csr_path)
+        self._openssl_command('ca', '-out', crt_path, '-infiles', csr_path)
 
     def get_cert(self, serial_number) -> Cert:
         cert_path = join(self._new_certs_dir, f'{serial_number}.pem')
         return Cert.from_file(cert_path)
 
     def get_cert_list(self):
-        for cert_filename in listdir(self._new_certs_dir):
+        for cert_filename in os.listdir(self._new_certs_dir):
             cert_path = join(self._new_certs_dir, cert_filename)
             yield Cert.from_file(cert_path)
 
