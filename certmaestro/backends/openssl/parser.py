@@ -11,7 +11,7 @@ class OpenSSLInterpolation(Interpolation):
 
     def before_get(self, parser, section, option, value, defaults):
         ind = value.find('$')
-        if ind < 0:
+        if ind == -1:
             return value
 
         m = self._KEYCRE.match(value[ind:])
