@@ -1,5 +1,5 @@
 import os
-from os.path import isfile, isdir, join
+from os.path import isfile, join, isdir
 import subprocess
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
@@ -28,10 +28,10 @@ class OpenSSLBackend:
             raise BackendError('OpenSSL command is not executable')
         self._command_path = command_path
 
-        try:
-            os.chdir(root_dir)
-        except FileNotFoundError as e:
-            raise BackendError(str(e))
+        if not isdir(root_dir):
+            raise BackendError("OpenSSL config directory (root_dir) doesn't exist")
+        if not os.access(root_dir, os.R_OK | os.W_OK | os.X_OK):
+            raise BackendError('OpenSSL config directory (root_dir) should have "rwx" permissions')
         self._root_dir = root_dir
 
         if not isfile(config_path):
