@@ -17,16 +17,17 @@ def hexify(serial_number: int):
 
 class Cert:
 
-    def __init__(self, pem_data):
+    def __init__(self, pem_data: str):
+        self._pem_data = pem_data
         self._cert = x509.load_pem_x509_certificate(pem_data.encode('utf8'), default_backend())
+
+    def __str__(self):
+        return self._pem_data
 
     @classmethod
     def from_file(cls, path):
         with open(path) as f:
             return cls(f.read())
-
-    def __str__(self):
-        return f'{self.coloned_serial[:14]}  {self.common_name}  {self.expiration}'
 
     @property
     def common_name(self):
