@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 install_requires = [
@@ -16,12 +16,12 @@ console_scripts = [
 ]
 
 classifiers = [
-    "Intended Audience :: System Administrators",
-    "Development Status :: 1 - Planning",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.5",
-    "Topic :: Security",
+    'Intended Audience :: System Administrators',
+    'Development Status :: 1 - Planning',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.5',
+    'Topic :: Security',
 ]
 
 
@@ -32,8 +32,8 @@ setup(
     author='Kiss György',
     author_email='kissgyorgy@me.com',
     url='https://www.certmaestro.com',
-    license="MIT",
-    packages=['certmaestro'],
+    license='MIT',
+    packages=find_packages(),
     install_requires=install_requires,
     entry_points={'console_scripts': console_scripts}
 )
