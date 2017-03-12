@@ -76,6 +76,15 @@ class Cert:
         return self._cert.not_valid_before
 
 
+class Key:
+
+    def __init__(self, pem_data: str):
+        self._pem_data = pem_data
+
+    def __str__(self):
+        return self._pem_data
+
+
 class RevokedCert:
 
     def __init__(self, cert):
