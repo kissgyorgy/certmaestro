@@ -5,6 +5,17 @@ import attr
 from .exceptions import BackendError
 
 
+CERT_FIELDS = (
+    ('common_name', 'Common Name'),
+    ('country', 'Country'),
+    ('state', 'State'),
+    ('locality', 'Locality'),
+    ('org_name', 'Organization name'),
+    ('org_unit', 'Organizational Unit'),
+    ('email', 'Email address')
+)
+
+
 class Config:
     DEFAULT_PATH = expanduser('~/.config/certmaestro/certmaestro.ini')
 

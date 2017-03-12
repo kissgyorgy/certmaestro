@@ -6,6 +6,7 @@ from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert, Key, Crl, SerialNumber
 from ...config import Param
 from ...exceptions import BackendError
+from ...csr import CsrPolicy, CsrBuilder
 from ..interfaces import IBackend
 from .parser import OpenSSLConfigParser
 
@@ -52,6 +53,16 @@ class OpenSSLBackend:
         return self._cnf[ca_section_name]
 
     @property
+    def _distinguished_name_section(self):
+        section_name = self._cnf['req']['distinguished_name']
+        return self._cnf[section_name]
+
+    @property
+    def _policy_section(self):
+        section_name = self._ca_section['policy']
+        return self._cnf[section_name]
+
+    @property
     def _new_certs_dir(self):
         return join(self._root_dir, self._ca_section['new_certs_dir'])
 
@@ -63,21 +74,76 @@ class OpenSSLBackend:
         else:
             return join(self._root_dir, self._ca_section['dir'], 'certs')
 
-    def _openssl_command(self, main_command, *params):
+    def _openssl(self, main_command, *params, input=None):
+        if input is not None:
+            input = input.encode()
         command = [self._command_path, main_command, '-config', self._config_path, *params]
-        subprocess.run(command)
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                input=input)
+        if result.returncode != 0:
+            raise ValueError(result.stderr.decode())
+        return result.stdout.decode()
 
     def get_ca_cert(self):
         ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
         return Cert.from_file(ca_cert_path)
 
-    def issue_cert(self, common_name):
-        basename = join(self._certs_dir, common_name)
-        key_path = basename + '.key'
-        csr_path = basename + '.csr'
-        crt_path = basename + '.crt'
-        self._openssl_command('req', '-newkey', 'rsa', '-keyout', key_path, '-out', csr_path)
-        self._openssl_command('ca', '-out', crt_path, '-infiles', csr_path)
+    def _adapt_policy(self, policy):
+        policy = policy.lower()
+        if policy == 'supplied':
+            return CsrPolicy.REQUIRED
+        elif policy == 'match':
+            return CsrPolicy. FROMCA
+        elif policy == 'optional':
+            return CsrPolicy.OPTIONAL
+
+    def get_csr_policy(self):
+        psec = self._policy_section
+        return {
+            'common_name': self._adapt_policy(psec['commonName']),
+            'country': self._adapt_policy(psec['countryName']),
+            'state': self._adapt_policy(psec['stateOrProvinceName']),
+            'locality': self._adapt_policy(psec['localityName']),
+            'org_name': self._adapt_policy(psec['organizationName']),
+            'org_unit': self._adapt_policy(psec['organizationalUnitName']),
+            'email': self._adapt_policy(psec['emailAddress']),
+        }
+
+    def get_csr_defaults(self):
+        dnsec = self._distinguished_name_section
+        return {
+            'common_name': dnsec.get('commonName_default'),
+            'country': dnsec.get('countryName_default'),
+            'state': dnsec.get('stateOrProvinceName_default'),
+            'locality': dnsec.get('localityName_default'),
+            'org_name': dnsec.get('organizationName_default'),
+            'org_unit': dnsec.get('organizationalUnitName_default'),
+            'email': dnsec.get('emailAddress_default'),
+        }
+
+    def issue_cert(self, csr: CsrBuilder) -> (Key, Cert):
+        # openssl req -newkey rsa -nodes -subj "/C=HU/ST=Pest megye/L=Budapest/O=Company/CN=Domain"
+        key_and_csr_pem = self._openssl('req', '-newkey', 'rsa', '-nodes', '-subj', csr.subject)
+        key_pem, csr_pem = self._split_pem(key_and_csr_pem)
+        cert_pem = self._openssl('ca', '-batch', '-notext', '-in', '/dev/stdin', input=csr_pem)
+        cert = Cert(cert_pem)
+        serial_hex = cert.serial_number.as_hex()
+        self._save_pem(cert_pem, serial_hex + '.pem')
+        self._save_pem(key_pem, serial_hex + '.key')
+        return Key(key_pem), cert
+
+    def _split_pem(self, key_and_csr_pem: str):
+        end_text = '-----END PRIVATE KEY-----'
+        # new line is included at the end
+        key_pem_end = key_and_csr_pem.find(end_text) + len(end_text)
+        key_pem = key_and_csr_pem[:key_pem_end]
+        csr_pem = key_and_csr_pem[key_pem_end + 1:]  # new line excluded from the start
+        return key_pem, csr_pem
+
+    def _save_pem(self, pem_data: str, filename: str):
+        path = join(self._certs_dir, filename)
+        with open(path, 'w') as f:
+            f.write(str(pem_data))
 
     def get_cert(self, serial_str: str) -> Cert:
         serial_hex = SerialNumber(serial_str).as_hex()

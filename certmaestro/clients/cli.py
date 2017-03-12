@@ -8,8 +8,9 @@ import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
 from certmaestro.backends import get_backend, get_backend_cls, enumerate_backends
-from certmaestro.config import BackendBuilder
+from certmaestro.config import CERT_FIELDS, BackendBuilder
 from certmaestro.exceptions import BackendError
+from certmaestro.csr import CsrPolicy, CsrBuilder
 
 
 class Obj:
@@ -115,9 +116,15 @@ def show_config(obj):
 @ensure_config
 def issue_cert(obj):
     """Issue a new certificate."""
-    common_name = click.prompt('Common name')
-    result = obj.backend.issue_cert(common_name)
-    click.echo(result)
+    policy = obj.backend.get_csr_policy()
+    defaults = obj.backend.get_csr_defaults()
+    csr = CsrBuilder(policy, defaults)
+    for field, description in CERT_FIELDS:
+        if csr.policy[field] == CsrPolicy.REQUIRED:
+            csr[field] = click.prompt(description, default=csr[field])
+    key, cert = obj.backend.issue_cert(csr)
+    click.echo(cert)
+    click.echo(key)
 
 
 @main.command('show-cert')
