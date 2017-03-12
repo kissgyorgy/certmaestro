@@ -175,9 +175,11 @@ def show_crl(obj):
     click.echo(f'Next update:           {crl.next_update}')
     click.echo()
     headers = ['Revocation Date', 'Invalidity Date', 'Reason', 'Serial Number']
-    revoked_certs = ((rc.revocation_date, rc.invalidity_date, rc.reason, rc.serial_number)
-                     for rc in crl)
+    revoked_certs = [(rc.revocation_date, rc.invalidity_date, rc.reason, rc.serial_number)
+                     for rc in crl]
     click.echo(tabulate(revoked_certs, headers=headers))
+    if not revoked_certs:
+        click.echo('No certificates has been revoked yet!')
 
 
 @main.command('deploy-cert')
