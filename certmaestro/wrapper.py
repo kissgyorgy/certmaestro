@@ -8,7 +8,7 @@ from cryptography.hazmat.backends import default_backend
 
 
 def hexify(serial_number: int):
-    """Convert an integer to a colon separated, uppercase hexadecimal value."""
+    """Convert an integer to a colon separated hexadecimal value."""
     serial = hex(serial_number)[2:]
     if len(serial) % 2 == 1:
         serial = '0' + serial
