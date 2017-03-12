@@ -1,6 +1,7 @@
 import os
 from os.path import isfile, join, isdir
 import subprocess
+from typing import Iterator
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert, Key, Crl, SerialNumber
@@ -86,7 +87,7 @@ class OpenSSLBackend:
             raise ValueError(result.stderr.decode())
         return result.stdout.decode()
 
-    def get_ca_cert(self):
+    def get_ca_cert(self) -> Cert:
         ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
         return Cert.from_file(ca_cert_path)
 
@@ -152,7 +153,7 @@ class OpenSSLBackend:
         cert_path = join(self._new_certs_dir, f'{serial_hex}.pem')
         return Cert.from_file(cert_path)
 
-    def get_cert_list(self):
+    def get_cert_list(self) -> Iterator[Cert]:
         for cert_filename in os.listdir(self._new_certs_dir):
             cert_path = join(self._new_certs_dir, cert_filename)
             yield Cert.from_file(cert_path)

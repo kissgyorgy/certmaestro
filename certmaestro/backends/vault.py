@@ -1,4 +1,4 @@
-import datetime as dt
+from typing import Iterator
 from zope.interface import implementer
 import hvac
 from requests.exceptions import RequestException
@@ -101,7 +101,7 @@ class VaultBackend:
             'email': None,
         }
 
-    def issue_cert(self, csr):
+    def issue_cert(self, csr) -> (Key, Cert):
         res = self._client.write(f'{self.mount_point}/issue/{self.role}',
                                  common_name=csr['common_name'])
         return Key(res['data']['private_key']), Cert(res['data']['certificate'])
@@ -110,7 +110,7 @@ class VaultBackend:
         return self._client.write(f'{self.mount_point}/revoke',
                                   serial_number=str(SerialNumber(serial_str)))
 
-    def get_cert_list(self):
+    def get_cert_list(self) -> Iterator[Cert]:
         res = self._client.list(f'{self.mount_point}/certs')
         for serial_str in res['data']['keys']:
             yield self.get_cert(serial_str)

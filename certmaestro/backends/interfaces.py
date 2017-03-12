@@ -1,4 +1,6 @@
+from typing import Iterator
 from zope.interface import Interface, Attribute
+from ..wrapper import Key, Cert, Crl
 
 
 class IBackend(Interface):
@@ -12,20 +14,20 @@ class IBackend(Interface):
     def setup(self, **kwargs):
         """Initialize configuration with backend specific parameters."""
 
-    def get_ca_cert(self):
+    def get_ca_cert(self) -> Cert:
         """Get CA certificate."""
 
-    def issue_cert(self, common_name):
+    def issue_cert(self, common_name) -> (Key, Cert):
         """Issue a new cert for a Common Name."""
 
     def revoke_cert(self, serial_str):
         """Revoke certificate by serial number."""
 
-    def get_cert_list(self):
+    def get_cert_list(self) -> Iterator[Cert]:
         """Get the list of all the issued certificates."""
 
-    def get_cert(self, serial_str):
+    def get_cert(self, serial_str) -> Cert:
         """Get certificate."""
 
-    def get_crl(self):
+    def get_crl(self) -> Crl:
         """Get certificate revocation list."""
