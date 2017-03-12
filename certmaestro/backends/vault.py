@@ -1,6 +1,8 @@
+import datetime as dt
 from zope.interface import implementer
 import hvac
 from requests.exceptions import RequestException
+from ..csr import CsrPolicy
 from ..exceptions import BackendError
 from ..wrapper import Cert, Key, Crl, SerialNumber
 from ..config import starts_with_http, strtobool, Param
@@ -77,8 +79,32 @@ class VaultBackend:
         res = self._client.read(f'{self.mount_point}/cert/ca')
         return Cert(res['data']['certificate'])
 
-    def issue_cert(self, common_name):
-        return self._client.write(f'{self.mount_point}/issue/{self.role}', common_name=common_name)
+    def get_csr_policy(self):
+        return {
+            'common_name': CsrPolicy.REQUIRED,
+            'country': CsrPolicy.OPTIONAL,
+            'state': CsrPolicy.OPTIONAL,
+            'locality': CsrPolicy.OPTIONAL,
+            'org_name': CsrPolicy.OPTIONAL,
+            'org_unit': CsrPolicy.OPTIONAL,
+            'email': CsrPolicy.OPTIONAL,
+        }
+
+    def get_csr_defaults(self):
+        return {
+            'common_name': None,
+            'country': None,
+            'state': None,
+            'locality': None,
+            'org_name': None,
+            'org_unit': None,
+            'email': None,
+        }
+
+    def issue_cert(self, csr):
+        res = self._client.write(f'{self.mount_point}/issue/{self.role}',
+                                 common_name=csr['common_name'])
+        return Key(res['data']['private_key']), Cert(res['data']['certificate'])
 
     def revoke_cert(self, serial_str):
         return self._client.write(f'{self.mount_point}/revoke',
