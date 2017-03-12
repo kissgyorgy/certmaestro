@@ -135,7 +135,8 @@ def show_cert(obj, serial_number):
     cert = obj.backend.get_cert(serial_number.lower())
     click.echo(f'Serial number:     {cert.serial_number}')
     click.echo(f'Common Name:       {cert.common_name}')
-    click.echo(f'Expires:           {cert.expires}')
+    click.echo(f'Not valid before:  {cert.not_valid_before}')
+    click.echo(f'Not valid after:   {cert.not_valid_after}')
 
 
 @main.command('show-ca-cert')
@@ -145,7 +146,8 @@ def show_ca_cert(obj):
     cert = obj.backend.get_ca_cert()
     click.echo(f'Serial number:     {cert.serial_number}')
     click.echo(f'Common Name:       {cert.common_name}')
-    click.echo(f'Expires:           {cert.expires}')
+    click.echo(f'Not valid before:  {cert.not_valid_before}')
+    click.echo(f'Not valid after:   {cert.not_valid_after}')
 
 
 @main.command('list-certs')
@@ -153,9 +155,10 @@ def show_ca_cert(obj):
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
-    cert_table = ((c.common_name, c.expires, c.serial_number) for c in cert_list)
-    click.echo(tabulate(cert_table, headers=['Common Name', 'Expires', 'Serial Number'],
-                        numalign='left'))
+    cert_table = ((c.common_name, c.not_valid_before, c.not_valid_after, c.serial_number)
+                  for c in cert_list)
+    headers = ['Common Name', 'Not valid before', 'Not valid after', 'Serial Number']
+    click.echo(tabulate(cert_table, headers=headers, numalign='left'))
 
 
 @main.command('revoke-cert')

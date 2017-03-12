@@ -71,8 +71,12 @@ class Cert:
         return SerialNumber.from_int(self._cert.serial_number)
 
     @property
-    def expires(self):
+    def not_valid_before(self):
         return self._cert.not_valid_before
+
+    @property
+    def not_valid_after(self):
+        return self._cert.not_valid_after
 
 
 class Key:
