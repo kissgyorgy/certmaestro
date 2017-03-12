@@ -2,7 +2,6 @@
     Wrapper around cryptography.x509 module for a nicer API.
 """
 
-import datetime as dt
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
@@ -96,15 +95,7 @@ class RevokedCert:
 
     @property
     def revocation_date(self):
-        try:
-            return self._cert.revocation_date
-        except ValueError as e:
-            error_message = e.args[0]
-            # Fix for bug in Vault, # see: https://github.com/hashicorp/vault/issues/1727
-            # and https://github.com/pyca/cryptography/issues/3086
-            invalid_date_str = error_message[11:30]
-            local_date = dt.datetime.strptime(invalid_date_str, '%Y%m%d%H%M%S%z')
-            return local_date.astimezone(dt.timezone.utc).replace(tzinfo=None)
+        return self._cert.revocation_date
 
     @property
     def reason(self):
