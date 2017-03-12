@@ -31,7 +31,8 @@ class Cert:
 
     @property
     def common_name(self):
-        return self._cert.subject.get_attributes_for_oid(x509.OID_COMMON_NAME)[0].value
+        attributes = self._cert.subject.get_attributes_for_oid(x509.OID_COMMON_NAME)
+        return attributes[0].value if attributes else None
 
     @property
     def serial_number(self):
