@@ -25,7 +25,9 @@ class OpenSSLBackend:
     )
 
     def __init__(self, command_path, config_path, root_dir, crl_path):
-        if not os.access(command_path, os.F_OK | os.X_OK):
+        if not isfile(command_path) or not os.access(command_path, os.F_OK):
+            raise BackendError('OpenSSL command not found')
+        if not os.access(command_path, os.X_OK):
             raise BackendError('OpenSSL command is not executable')
         self._command_path = command_path
 
