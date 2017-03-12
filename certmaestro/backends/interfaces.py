@@ -18,13 +18,13 @@ class IBackend(Interface):
     def issue_cert(self, common_name):
         """Issue a new cert for a Common Name."""
 
-    def revoke_cert(self, serial_number):
+    def revoke_cert(self, serial_str):
         """Revoke certificate by serial number."""
 
     def get_cert_list(self):
         """Get the list of all the issued certificates."""
 
-    def get_cert(self, serial):
+    def get_cert(self, serial_str):
         """Get certificate."""
 
     def get_crl(self):

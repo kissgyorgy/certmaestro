@@ -146,8 +146,9 @@ def show_ca_cert(obj):
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
-    cert_table = ((c.common_name, c.expires, c.serial_number,) for c in cert_list)
-    click.echo(tabulate(cert_table, headers=['Common Name', 'Expires', 'Serial Number']))
+    cert_table = ((c.common_name, c.expires, c.serial_number) for c in cert_list)
+    click.echo(tabulate(cert_table, headers=['Common Name', 'Expires', 'Serial Number'],
+                        numalign='left'))
 
 
 @main.command('revoke-cert')
