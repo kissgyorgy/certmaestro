@@ -2,7 +2,7 @@ from zope.interface import implementer
 import hvac
 from requests.exceptions import RequestException
 from ..exceptions import BackendError
-from ..wrapper import Cert, Crl
+from ..wrapper import Cert, Key, Crl, SerialNumber
 from ..config import starts_with_http, strtobool, Param
 from .interfaces import IBackend
 
@@ -80,15 +80,17 @@ class VaultBackend:
     def issue_cert(self, common_name):
         return self._client.write(f'{self.mount_point}/issue/{self.role}', common_name=common_name)
 
-    def revoke_cert(self, serial_number):
-        return self._client.write(f'{self.mount_point}/revoke', serial_number=serial_number)
+    def revoke_cert(self, serial_str):
+        return self._client.write(f'{self.mount_point}/revoke',
+                                  serial_number=str(SerialNumber(serial_str)))
 
     def get_cert_list(self):
         res = self._client.list(f'{self.mount_point}/certs')
-        for serial_number in res['data']['keys']:
-            yield self.get_cert(serial_number)
+        for serial_str in res['data']['keys']:
+            yield self.get_cert(serial_str)
 
-    def get_cert(self, serial_number) -> Cert:
+    def get_cert(self, serial_str: str) -> Cert:
+        serial_number = SerialNumber(serial_str)
         res = self._client.read(f'{self.mount_point}/cert/{serial_number}')
         return Cert(res['data']['certificate'])
 

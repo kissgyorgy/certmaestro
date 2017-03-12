@@ -3,7 +3,7 @@ from os.path import isfile, join, isdir
 import subprocess
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
-from ...wrapper import Cert, Crl
+from ...wrapper import Cert, Key, Crl, SerialNumber
 from ...config import Param
 from ...exceptions import BackendError
 from ..interfaces import IBackend
@@ -79,8 +79,9 @@ class OpenSSLBackend:
         self._openssl_command('req', '-newkey', 'rsa', '-keyout', key_path, '-out', csr_path)
         self._openssl_command('ca', '-out', crt_path, '-infiles', csr_path)
 
-    def get_cert(self, serial_number) -> Cert:
-        cert_path = join(self._new_certs_dir, f'{serial_number}.pem')
+    def get_cert(self, serial_str: str) -> Cert:
+        serial_hex = SerialNumber(serial_str).as_hex()
+        cert_path = join(self._new_certs_dir, f'{serial_hex}.pem')
         return Cert.from_file(cert_path)
 
     def get_cert_list(self):

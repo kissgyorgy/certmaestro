@@ -7,12 +7,45 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
 
-def hexify(serial_number: int):
-    """Convert an integer to a colon separated hexadecimal value."""
-    serial = hex(serial_number)[2:]
-    if len(serial) % 2 == 1:
-        serial = '0' + serial
-    return ':'.join(serial[i:i+2] for i in range(0, len(serial), 2))
+class SerialNumber:
+
+    def __init__(self, serial_str: str):
+        # might have 0x prefix, and/or colons
+        serial_str = serial_str.lower()
+        if serial_str.startswith('0x'):
+            serial_str = serial_str[2:]
+        if ':' in serial_str:
+            serial_str = self._decolonize(serial_str)
+        serial_str = self._zero_prefix(serial_str)
+        serial_str = self._colonize(serial_str)
+        self._value = serial_str
+
+    @classmethod
+    def from_int(cls, serial_int: int):
+        return cls(hex(serial_int))
+
+    def __str__(self):
+        return self._value
+
+    def __repr__(self):
+        return f'<{self.__class__.__name__}: {self._value}>'
+
+    def as_hex(self, prefix=False):
+        serial_hex = self._decolonize(self._value)
+        return '0x' + serial_hex if prefix else serial_hex
+
+    @staticmethod
+    def _zero_prefix(serial_hex):
+        if len(serial_hex) % 2 == 1:
+            serial_hex = '0' + serial_hex
+        return serial_hex
+
+    @staticmethod
+    def _colonize(serial_hex: str):
+        return ':'.join(serial_hex[i:i+2] for i in range(0, len(serial_hex), 2))
+
+    def _decolonize(self, serial_str):
+        return serial_str.replace(':', '')
 
 
 class Cert:
@@ -36,7 +69,7 @@ class Cert:
 
     @property
     def serial_number(self):
-        return hexify(self._cert.serial_number)
+        return SerialNumber.from_int(self._cert.serial_number)
 
     @property
     def expires(self):
@@ -50,7 +83,7 @@ class RevokedCert:
 
     @property
     def serial_number(self):
-        return hexify(self._cert.serial_number)
+        return SerialNumber.from_int(self._cert.serial_number)
 
     @property
     def revocation_date(self):
