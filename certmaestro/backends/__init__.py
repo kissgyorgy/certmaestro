@@ -13,6 +13,7 @@ _BACKENDS = [
     OpenSSLBackend,
     MySQLBackend,
 ]
+NUM_BACKENDS = len(_BACKENDS)
 
 
 def get_backend(config):

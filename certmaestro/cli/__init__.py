@@ -7,7 +7,7 @@ from urllib3 import exceptions as u3exc
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
-from certmaestro.backends import get_backend, get_backend_cls, enumerate_backends
+from certmaestro.backends import NUM_BACKENDS, get_backend, get_backend_cls, enumerate_backends
 from certmaestro.config import CERT_FIELDS, BackendBuilder
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
@@ -82,7 +82,8 @@ def setup_backend(ctx):
     for choice, name, description in enumerate_backends():
         click.echo(f'{choice}. {name} - {description}')
 
-    backend_choice = click.prompt('Which backend do you want to set up (1-5)?', default=1)
+    backend_choice = click.prompt(f'Which backend do you want to set up (1-{NUM_BACKENDS})?',
+                                  default=1)
     click.echo()
     BackendCls = get_backend_cls(backend_choice)
     builder = BackendBuilder(BackendCls)
