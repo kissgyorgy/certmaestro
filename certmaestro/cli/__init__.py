@@ -50,7 +50,7 @@ ensure_config = click.make_pass_decorator(Obj, ensure=True)
 
 
 @click.group(invoke_without_command=True)
-@click.option('--config', 'config_path', default=Config.DEFAULT_PATH,
+@click.option('-c', '--config', 'config_path', default=Config.DEFAULT_PATH,
               help='Default: ' + Config.DEFAULT_PATH,
               type=click.Path(dir_okay=False, writable=True, resolve_path=True))
 @click.option('-V', '--version', 'show_version', is_flag=True, is_eager=True,
