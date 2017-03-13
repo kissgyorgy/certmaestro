@@ -1,74 +1,44 @@
 Certificate
     Serial number:     {{ cert.serial_number }}
-    Not Valid Before:  {{ cert.not_before }}
-    Not Valid After:   {{ cert.not_after }}
-    Version:           {{ cert.version }} ({{ cert.hex_version }})
+    Not Valid Before:  {{ cert.validity.not_before }}
+    Not Valid After:   {{ cert.validity.not_after }}
+    Version:           {{ cert.version }}
 
 Issuer
-    {%- if cert.issuer.common_name %}
-    Common Name:   {{ cert.issuer.common_name }}
-    {%- endif %}
-    {%- if cert.issuer.country %}
-    Country:       {{ cert.issuer.country }}
-    {%- endif %}
-    {%- if cert.issuer.state %}
-    State:         {{ cert.issuer.state }}
-    {%- endif %}
-    {%- if cert.issuer.locality %}
-    Locality:      {{ cert.issuer.locality }}
-    {%- endif %}
-    {%- if cert.issuer.org_name %}
-    Organization:  {{ cert.issuer.org_name }}
-    {%- endif %}
-    {%- if cert.issuer.org_unit %}
-    Org. unit:     {{ cert.issuer.org_unit }}
-    {%- endif %}
+    {%- for line in cert.issuer.formatted_lines %}
+        {{ line }}
+    {%- endfor %}
 
 Subject
-    {%- if cert.subject.common_name %}
-    Common Name:   {{ cert.subject.common_name }}
-    {%- endif %}
-    {%- if cert.subject.country %}
-    Country:       {{ cert.subject.country }}
-    {%- endif %}
-    {%- if cert.subject.state %}
-    State:         {{ cert.subject.state }}
-    {%- endif %}
-    {%- if cert.subject.locality %}
-    Locality:      {{ cert.subject.locality }}
-    {%- endif %}
-    {%- if cert.subject.org_name %}
-    Organization:  {{ cert.subject.org_name }}
-    {%- endif %}
-    {%- if cert.subject.org_unit %}
-    Org. unit:     {{ cert.subject.org_unit }}
-    {%- endif %}
+    {%- for line in cert.subject.formatted_lines %}
+        {{ line }}
+    {%- endfor %}
 
 X509v3 extensions
-    X509v3 Basic Constraints:
-        CA: {{ cert.extensions.basic_constraints_ca }}
-        {%- if cert.extensions.basic_constraints_path_length %}
-        Path length: {{ cert.extensions.basic_constraints_path_length }}
-        {%- endif %}
-    {%- if cert.extensions.key_usages %}
-    X509v3 Key Usage:
-        {%- for key_usage in cert.extensions.key_usages %}
-        {{ key_usage._name }}
+    X509v3 Basic Constraints
+        CA: {{ cert.ca }}
+        {%- if cert.ca %}
+        Path length: {{ cert.max_path_length }}
+        {% endif %}
+    {%- if cert.key_usages %}
+    X509v3 Key Usages
+        {%- for key_usage in cert.key_usages %}
+        {{ key_usage }}
         {%- endfor %}
     {%- endif %}
-    {%- if cert.extensions.extended_key_usages %}
+    {%- if cert.extended_key_usages %}
     X509v3 Extended Key Usage:
-        {%- for ext_key_usage in cert.extensions.extended_key_usages %}
-        {{ ext_key_usage._name }}
+        {%- for ext_key_usage in cert.extended_key_usages %}
+        {{ ext_key_usage }}
         {%- endfor %}
     {%- endif %}
 
 Public Key
-    Length:     {{ cert.public_key.size }}
+    Length:     {{ cert.public_key.bit_size }} bit
     Algorithm:  {{ cert.public_key.algorithm }}
     Exponent:   {{ cert.public_key.exponent }} ({{ cert.public_key.hex_exponent }})
     Modulus:
-        {{ cert.public_key.coloned_modulus|wordwrap(45, wrapstring='\n        ') }}
+        {{ cert.public_key.modulus|wordwrap(45, wrapstring='\n        ') }}
 
 Signature
     Algorithm:  {{ cert.signature_algorithm }}
