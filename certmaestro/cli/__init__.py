@@ -124,8 +124,6 @@ def issue_cert(obj):
         if csr.policy[field] == CsrPolicy.REQUIRED:
             csr[field] = click.prompt(description, default=csr[field])
     key, cert = obj.backend.issue_cert(csr)
-    click.echo(cert)
-    click.echo(key)
 
 
 @main.command('show-cert')
