@@ -50,7 +50,7 @@ class SerialNumber:
         return serial_str.replace(':', '')
 
 
-class Identity:
+class Name:
 
     def __init__(self, val):
         self._val = val
@@ -104,11 +104,11 @@ class Cert:
 
     @property
     def issuer(self):
-        return Identity(self._cert.issuer)
+        return Name(self._cert.issuer)
 
     @property
     def subject(self):
-        return Identity(self._cert.subject)
+        return Name(self._cert.subject)
 
     @property
     def serial_number(self):
