@@ -11,6 +11,7 @@ from certmaestro.backends import get_backend, get_backend_cls, enumerate_backend
 from certmaestro.config import CERT_FIELDS, BackendBuilder
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
+from .formatter import env
 
 
 class Obj:
@@ -132,11 +133,9 @@ def issue_cert(obj):
 @ensure_config
 def show_cert(obj, serial_number):
     """Show certificate details."""
+    template = env.get_template('certmaestro_format.jinja2')
     cert = obj.backend.get_cert(serial_number.lower())
-    click.echo(f'Serial number:     {cert.serial_number}')
-    click.echo(f'Common Name:       {cert.common_name}')
-    click.echo(f'Not valid before:  {cert.not_valid_before}')
-    click.echo(f'Not valid after:   {cert.not_valid_after}')
+    click.echo(template.render(cert=cert))
 
 
 @main.command('show-ca-cert')
@@ -144,10 +143,8 @@ def show_cert(obj, serial_number):
 def show_ca_cert(obj):
     """Show CA certificate details."""
     cert = obj.backend.get_ca_cert()
-    click.echo(f'Serial number:     {cert.serial_number}')
-    click.echo(f'Common Name:       {cert.common_name}')
-    click.echo(f'Not valid before:  {cert.not_valid_before}')
-    click.echo(f'Not valid after:   {cert.not_valid_after}')
+    template = env.get_template('certmaestro_format.jinja2')
+    click.echo(template.render(cert=cert))
 
 
 @main.command('list-certs')
@@ -155,7 +152,7 @@ def show_ca_cert(obj):
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
-    cert_table = ((c.common_name, c.not_valid_before, c.not_valid_after, c.serial_number)
+    cert_table = ((c.subject.common_name, c.not_before, c.not_after, c.serial_number)
                   for c in cert_list)
     headers = ['Common Name', 'Not valid before', 'Not valid after', 'Serial Number']
     click.echo(tabulate(cert_table, headers=headers, numalign='left'))

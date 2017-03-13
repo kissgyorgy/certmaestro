@@ -4,7 +4,7 @@ import hvac
 from requests.exceptions import RequestException
 from ..csr import CsrPolicy
 from ..exceptions import BackendError
-from ..wrapper import Cert, Key, Crl, SerialNumber
+from ..wrapper import Cert, PrivateKey, Crl, SerialNumber
 from ..config import starts_with_http, strtobool, Param
 from .interfaces import IBackend
 
@@ -101,10 +101,10 @@ class VaultBackend:
             'email': None,
         }
 
-    def issue_cert(self, csr) -> (Key, Cert):
+    def issue_cert(self, csr) -> (PrivateKey, Cert):
         res = self._client.write(f'{self.mount_point}/issue/{self.role}',
                                  common_name=csr['common_name'])
-        return Key(res['data']['private_key']), Cert(res['data']['certificate'])
+        return PrivateKey(res['data']['private_key']), Cert(res['data']['certificate'])
 
     def revoke_cert(self, serial_str):
         return self._client.write(f'{self.mount_point}/revoke',

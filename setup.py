@@ -9,6 +9,7 @@ install_requires = [
     'zope.interface',
     'tabulate',
     'attrs',
+    'Jinja2',
 ]
 
 console_scripts = [

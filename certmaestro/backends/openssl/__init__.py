@@ -4,7 +4,7 @@ import subprocess
 from typing import Iterator
 from zope.interface import implementer
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
-from ...wrapper import Cert, Key, Crl, SerialNumber
+from ...wrapper import Cert, PrivateKey, Crl, SerialNumber
 from ...config import Param
 from ...exceptions import BackendError
 from ...csr import CsrPolicy, CsrBuilder
@@ -124,7 +124,7 @@ class OpenSSLBackend:
             'email': dnsec.get('emailAddress_default'),
         }
 
-    def issue_cert(self, csr: CsrBuilder) -> (Key, Cert):
+    def issue_cert(self, csr: CsrBuilder) -> (PrivateKey, Cert):
         # openssl req -newkey rsa -nodes -subj "/C=HU/ST=Pest megye/L=Budapest/O=Company/CN=Domain"
         key_and_csr_pem = self._openssl('req', '-newkey', 'rsa', '-nodes', '-subj', csr.subject)
         key_pem, csr_pem = self._split_pem(key_and_csr_pem)
@@ -133,7 +133,7 @@ class OpenSSLBackend:
         serial_hex = cert.serial_number.as_hex()
         self._save_pem(cert_pem, serial_hex + '.pem')
         self._save_pem(key_pem, serial_hex + '.key')
-        return Key(key_pem), cert
+        return PrivateKey(key_pem), cert
 
     def _split_pem(self, key_and_csr_pem: str):
         end_text = '-----END PRIVATE KEY-----'
