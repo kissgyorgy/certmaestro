@@ -3,7 +3,7 @@
 """
 
 from oscrypto.keys import parse_certificate
-from asn1crypto import x509, keys, pem, crl
+from asn1crypto import x509 as asn1x509, keys as asn1keys, pem as asn1pem, crl as asn1crl
 
 
 class SerialNumber:
@@ -49,7 +49,7 @@ class SerialNumber:
 
 class Name:
 
-    def __init__(self, name: x509.Name):
+    def __init__(self, name: asn1x509.Name):
         self._name = name
 
     @property
@@ -58,7 +58,7 @@ class Name:
 
     @property
     def formatted_lines(self):
-        field_names = [x509.NameType(field).human_friendly for field in self._name.native.keys()]
+        field_names = [asn1x509.NameType(field).human_friendly for field in self._name.native.keys()]
         max_length = max(len(field) for field in field_names)
         field_names = [f'{field}:'.ljust(max_length + 3) for field in field_names]
         return (field + val for field, val in zip(field_names, self._name.native.values()))
@@ -77,7 +77,7 @@ class Cert(FromFileMixin):
         # OpenSSL have an option to write readable text into the same file with PEM data
         start = self._find_start(pem_data)
         pem_data = pem_data[start:]
-        self._cert: x509.Certificate = parse_certificate(pem_data.encode())
+        self._cert: asn1x509.Certificate = parse_certificate(pem_data.encode())
         self._pem_data = pem_data
 
     def __str__(self):
@@ -161,7 +161,7 @@ class PrivateKey:
 
 
 class PublicKey:
-    def __init__(self, public_key: keys.PublicKeyInfo):
+    def __init__(self, public_key: asn1keys.PublicKeyInfo):
         self._public_key = public_key
 
     @property
@@ -189,7 +189,7 @@ class PublicKey:
 
 class RevokedCert:
 
-    def __init__(self, revoked_cert: crl.RevokedCertificate):
+    def __init__(self, revoked_cert: asn1crl.RevokedCertificate):
         self._rev_cert = revoked_cert
 
     @property
@@ -212,11 +212,11 @@ class RevokedCert:
 class Crl(FromFileMixin):
 
     def __init__(self, crl_pem: str):
-        type_name, headers, der_bytes = pem.unarmor(crl_pem.encode())
+        type_name, headers, der_bytes = asn1pem.unarmor(crl_pem.encode())
         if type_name != 'X509 CRL':
             raise ValueError('This not seem like a Certificate Revocation List.')
 
-        self._crl = crl.CertificateList.load(der_bytes)
+        self._crl = asn1crl.CertificateList.load(der_bytes)
 
     def __iter__(self):
         return iter(RevokedCert(c) for c in self._crl['tbs_cert_list']['revoked_certificates'])
