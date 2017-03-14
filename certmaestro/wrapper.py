@@ -3,8 +3,7 @@
 """
 
 from oscrypto.keys import parse_certificate
-from asn1crypto.x509 import Certificate, NameType
-from asn1crypto.keys import PublicKeyInfo
+from asn1crypto import x509, keys
 
 
 class SerialNumber:
@@ -55,7 +54,7 @@ class Name:
 
     @property
     def formatted_lines(self):
-        field_names = [NameType(field).human_friendly for field in self._name.native.keys()]
+        field_names = [x509.NameType(field).human_friendly for field in self._name.native.keys()]
         max_length = max(len(field) for field in field_names)
         field_names = [f'{field}:'.ljust(max_length + 3) for field in field_names]
         return (field + val for field, val in zip(field_names, self._name.native.values()))
@@ -65,7 +64,7 @@ class Cert:
 
     def __init__(self, pem_data: str):
         self._pem_data = pem_data
-        self._cert: Certificate = parse_certificate(pem_data.encode('utf8'))
+        self._cert: x509.Certificate = parse_certificate(pem_data.encode('utf8'))
 
     @classmethod
     def from_file(cls, path):
@@ -140,7 +139,7 @@ class PrivateKey:
 
 
 class PublicKey:
-    def __init__(self, public_key: PublicKeyInfo):
+    def __init__(self, public_key: keys.PublicKeyInfo):
         self._public_key = public_key
 
     @property
