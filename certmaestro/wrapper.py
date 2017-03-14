@@ -106,7 +106,7 @@ class Cert(FromFileMixin):
 
     @property
     def version(self):
-        return self._cert['tbs_certificate'].native['version']
+        return self._cert['tbs_certificate']['version'].native
 
     @property
     def issuer(self):
@@ -151,7 +151,7 @@ class Cert(FromFileMixin):
 
     @property
     def signature_algorithm(self):
-        return self._cert['signature_algorithm'].native['algorithm']
+        return self._cert['signature_algorithm']['algorithm'].native
 
 
 class PrivateKey:
@@ -169,7 +169,7 @@ class PublicKey:
 
     @property
     def modulus(self):
-        hex_modulus = hex(self._public_key.native['public_key']['modulus'])[2:]
+        hex_modulus = hex(self._public_key['public_key'].native['modulus'])[2:]
         # http://stackoverflow.com/questions/15953631/rsa-modulus-prefaced-by-0x00
         return '00:' + SerialNumber.colonize(hex_modulus)
 
@@ -183,11 +183,11 @@ class PublicKey:
 
     @property
     def exponent(self):
-        return self._public_key.native['public_key']['public_exponent']
+        return self._public_key['public_key'].native['public_exponent']
 
     @property
     def hex_exponent(self):
-        return hex(self._public_key.native['public_key']['public_exponent'])
+        return hex(self._public_key['public_key'].native['public_exponent'])
 
 
 class RevokedCert:
