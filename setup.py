@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 install_requires = [
     'click',
-    'cryptography',
+    'oscrypto',
     'urllib3[secure]',  # this will install certifi
     'hvac[parser]',
     'zope.interface',

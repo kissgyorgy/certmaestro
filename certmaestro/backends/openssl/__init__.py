@@ -3,7 +3,6 @@ from os.path import isfile, join, isdir
 import subprocess
 from typing import Iterator
 from zope.interface import implementer
-from cryptography.hazmat.backends.openssl import backend as openssl_backend
 from ...wrapper import Cert, PrivateKey, Crl, SerialNumber
 from ...config import Param
 from ...exceptions import BackendError
@@ -163,4 +162,6 @@ class OpenSSLBackend:
 
     @property
     def version(self) -> str:
-        return openssl_backend.openssl_version_text()
+        result = subprocess.run([self._command_path, 'version'], stdout=subprocess.PIPE)
+        cut_newline = slice(0, -1)
+        return result.stdout.decode()[cut_newline]
