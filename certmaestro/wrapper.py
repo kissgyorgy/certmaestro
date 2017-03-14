@@ -85,8 +85,12 @@ class Cert(FromFileMixin):
         return SerialNumber.from_int(self._cert.serial_number)
 
     @property
-    def validity(self):
-        return self._cert['tbs_certificate'].native['validity']
+    def not_valid_before(self):
+        return self._cert['tbs_certificate']['validity']['not_before'].native
+
+    @property
+    def not_valid_after(self):
+        return self._cert['tbs_certificate']['validity']['not_after'].native
 
     @property
     def version(self):

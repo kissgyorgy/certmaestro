@@ -153,7 +153,7 @@ def show_ca_cert(obj):
 def list_certs(obj):
     """List issued certificates."""
     cert_list = obj.backend.get_cert_list()
-    cert_table = ((c.subject.common_name, c.not_before, c.not_after, c.serial_number)
+    cert_table = ((c.subject.common_name, c.not_valid_before, c.not_valid_after, c.serial_number)
                   for c in cert_list)
     headers = ['Common Name', 'Not valid before', 'Not valid after', 'Serial Number']
     click.echo(tabulate(cert_table, headers=headers, numalign='left'))
