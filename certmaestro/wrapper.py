@@ -3,7 +3,7 @@
 """
 
 from oscrypto.keys import parse_certificate
-from asn1crypto import x509, keys
+from asn1crypto import x509, keys, pem, crl
 
 
 class SerialNumber:
@@ -49,8 +49,12 @@ class SerialNumber:
 
 class Name:
 
-    def __init__(self, name):
+    def __init__(self, name: x509.Name):
         self._name = name
+
+    @property
+    def common_name(self):
+        return self._name.native['common_name']
 
     @property
     def formatted_lines(self):
@@ -60,16 +64,18 @@ class Name:
         return (field + val for field, val in zip(field_names, self._name.native.values()))
 
 
-class Cert:
-
-    def __init__(self, pem_data: str):
-        self._pem_data = pem_data
-        self._cert: x509.Certificate = parse_certificate(pem_data.encode('utf8'))
-
+class FromFileMixin:
     @classmethod
     def from_file(cls, path):
         with open(path) as f:
             return cls(f.read())
+
+
+class Cert(FromFileMixin):
+
+    def __init__(self, pem_data: str):
+        self._pem_data = pem_data
+        self._cert: x509.Certificate = parse_certificate(pem_data.encode('utf8'))
 
     def __str__(self):
         return self._pem_data
@@ -166,8 +172,47 @@ class PublicKey:
 
 
 class RevokedCert:
-    ...
+
+    def __init__(self, revoked_cert: crl.RevokedCertificate):
+        self._rev_cert = revoked_cert
+
+    @property
+    def serial_number(self):
+        return SerialNumber.from_int(self._rev_cert['user_certificate'].native)
+
+    @property
+    def revocation_date(self):
+        return self._rev_cert['revocation_date'].native
+
+    @property
+    def invalidity_date(self):
+        return self._rev_cert.invalidity_date_value
+
+    @property
+    def reason(self):
+        return self._rev_cert.crl_reason_value
 
 
-class Crl:
-    ...
+class Crl(FromFileMixin):
+
+    def __init__(self, crl_pem: str):
+        type_name, headers, der_bytes = pem.unarmor(crl_pem.encode())
+        if type_name != 'X509 CRL':
+            raise ValueError('This not seem like a Certificate Revocation List.')
+
+        self._crl = crl.CertificateList.load(der_bytes)
+
+    def __iter__(self):
+        return iter(RevokedCert(c) for c in self._crl['tbs_cert_list']['revoked_certificates'])
+
+    @property
+    def this_update(self):
+        return self._crl['tbs_cert_list']['this_update'].native
+
+    @property
+    def next_update(self):
+        return self._crl['tbs_cert_list']['next_update'].native
+
+    @property
+    def issuer(self):
+        return Name(self._crl['tbs_cert_list']['issuer'])

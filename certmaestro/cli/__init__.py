@@ -179,8 +179,8 @@ def update_crl(obj):
 def show_crl(obj):
     """Show the Certificate Revocation List."""
     crl = obj.backend.get_crl()
-    click.echo(f'Issuer Common Name:    {crl.issuer}')
-    click.echo(f'Last update:           {crl.last_update}')
+    click.echo(f'Issuer Common Name:    {crl.issuer.common_name}')
+    click.echo(f'This update:           {crl.this_update}')
     click.echo(f'Next update:           {crl.next_update}')
     click.echo()
     headers = ['Revocation Date', 'Invalidity Date', 'Reason', 'Serial Number']
