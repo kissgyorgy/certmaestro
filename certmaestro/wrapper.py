@@ -54,7 +54,7 @@ class Name:
 
     @property
     def common_name(self):
-        return self._name.native['common_name']
+        return self._name.native.get('common_name')
 
     @property
     def formatted_lines(self):
