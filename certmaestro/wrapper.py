@@ -126,14 +126,17 @@ class Cert(FromFileMixin):
 
     @property
     def key_usages(self):
-        yield from self._convert_values(self._cert.key_usage_value.native)
+        yield from self._convert_values(self._cert.key_usage_value)
 
     @property
     def extended_key_usages(self):
-        yield from self._convert_values(self._cert.extended_key_usage_value.native)
+        yield from self._convert_values(self._cert.extended_key_usage_value)
 
-    def _convert_values(self, values):
+    def _convert_values(self, asn1type):
         """Reformat the words as defined in RFC5280. E.g. keyEncipherment."""
+        if asn1type is None:
+            return None
+        values = asn1type.native
         for usage in values:
             words = usage.split('_')
             yield ''.join(words[0:1] + [w.title() for w in words[1:]])
