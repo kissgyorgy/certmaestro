@@ -74,11 +74,23 @@ class FromFileMixin:
 class Cert(FromFileMixin):
 
     def __init__(self, pem_data: str):
+        # OpenSSL have an option to write readable text into the same file with PEM data
+        start = self._find_start(pem_data)
+        pem_data = pem_data[start:]
+        self._cert: x509.Certificate = parse_certificate(pem_data.encode())
         self._pem_data = pem_data
-        self._cert: x509.Certificate = parse_certificate(pem_data.encode('utf8'))
 
     def __str__(self):
         return self._pem_data
+
+    @staticmethod
+    def _find_start(pem_data):
+        start = pem_data.find('-----BEGIN')
+        if start == -1:
+            start = pem_data.find('---- BEGIN')
+            if start == -1:
+                raise ValueError(f"This doesn't seem like a valid X509 Certificate: {pem_data}")
+        return start
 
     @property
     def serial_number(self):
