@@ -205,6 +205,8 @@ def deploy_cert(obj):
 def check_site(ctx, urls, timeout, retries, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
+    This doesn't say anything about your whole webserver configuration, only check
+    the certificate. Use it as a quick check!
 
     \b
     Shell exitcode will be:
