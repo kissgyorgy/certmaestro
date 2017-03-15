@@ -1,7 +1,5 @@
 from os.path import exists
 import click
-import certifi
-import urllib3
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
@@ -10,7 +8,7 @@ from certmaestro.config import CERT_FIELDS, BackendBuilder
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
 from .formatter import env
-from .threads import CheckSiteThread
+from .threads import CheckSiteManager
 
 
 class Obj:
@@ -218,31 +216,23 @@ def check_site(ctx, urls, timeout, retries, redirect):
         raise click.UsageError('You need to provide at least one site to check!')
 
     click.echo('Checking certificates...')
-    # deduplicate
-    urls = set(urls)
-    # enable certificate verification with certifi (Mozilla CA bundle)
-    http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(),
-                               num_pools=len(urls), timeout=timeout, maxsize=2, retries=retries)
-    threads = []
-    for url in urls:
-        thread = CheckSiteThread(http, redirect, url)
-        threads.append(thread)
-        thread.start()
+    manager = CheckSiteManager(urls, redirect, timeout, retries)
+    for check_result in manager.check_sites():
+        if check_result.succeeded:
+            click.secho(f'Valid:     {check_result.url}', fg='green')
+        elif check_result.skipped:
+            click.echo(f'Skipped:   {check_result.url} ({check_result.message})')
+        elif check_result.failed:
+            click.secho(f'Failed:    {check_result.url} ({check_result.message})', fg='red')
 
-    for thread in threads:
-        thread.join()
-
-    success_count = sum(t.succeeded for t in threads)
-    skip_count = sum(t.skipped for t in threads)
-    fail_count = sum(t.failed for t in threads)
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
-    success_message = click.style(f'success: {success_count}', fg='green')
-    failed_message = click.style(f'failed: {fail_count}.', fg='red')
-    click.echo(f'{total_message}, {success_message}, skipped: {skip_count}, {failed_message}')
+    success_message = click.style(f'success: {manager.success_count}', fg='green')
+    failed_message = click.style(f'failed: {manager.fail_count}.', fg='red')
+    click.echo(f'{total_message}, {success_message}, skipped: {manager.skip_count}, {failed_message}')
 
-    if fail_count > 0:
+    if manager.fail_count > 0:
         exitcode = 2
-    elif skip_count > 0:
+    elif manager.skip_count > 0:
         exitcode = 1
     else:
         exitcode = 0
