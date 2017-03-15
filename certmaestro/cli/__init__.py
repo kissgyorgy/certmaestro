@@ -7,8 +7,8 @@ from certmaestro.backends import BACKENDS, get_backend
 from certmaestro.config import CERT_FIELDS, BackendBuilder
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
+from certmaestro.check import CheckSiteManager
 from .formatter import env
-from .threads import CheckSiteManager
 
 
 class Obj:
