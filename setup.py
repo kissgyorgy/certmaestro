@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 install_requires = [
     'click',
     'oscrypto',
-    'urllib3[secure]',  # this will install certifi
+    'certifi',
     'hvac[parser]',
     'zope.interface',
     'tabulate',
