@@ -138,11 +138,8 @@ def main():
     print(format_str.format('Subdomain', 'Marked', 'OpenSSL', 'OpenSSL Certifi',
                             'OSCrypto', 'urllib3'))
 
-    for subdomain, marked_as in ALL_BADSSL_SUBDOMAINS:
-        domain = subdomain + '.badssl.com'
-        print_matrix_line(format_str, domain, marked_as)
-
-    for domain, marked_as in OTHER_DOMAINS:
+    BADSSL_DOMAINS = map(lambda s: (s[0] + '.badssl.com', s[1]), ALL_BADSSL_SUBDOMAINS)
+    for domain, marked_as in tuple(BADSSL_DOMAINS) + OTHER_DOMAINS:
         print_matrix_line(format_str, domain, marked_as)
 
 
