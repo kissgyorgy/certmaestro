@@ -17,19 +17,19 @@ class OpenSSLBackend:
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
 
     init_requires = (
-        Param('command_path', help='Path to the openssl binary'),
-        Param('config_path', help='Path to the openssl config file (usually openssl.cnf)'),
+        Param('openssl_binary', help='Path to the openssl binary'),
+        Param('config_file', help='Path to the openssl config file (usually openssl.cnf)'),
         Param('root_dir', help='Working directory for the OpenSSL files and directories. Relative '
                                'directory definitions in config file are compared to this.'),
-        Param('crl_path', help='Path to the Certificate Revocation List file (usually crl.pem)'),
+        Param('crl_file', help='Path to the Certificate Revocation List file (usually crl.pem)'),
     )
 
-    def __init__(self, command_path, config_path, root_dir, crl_path):
-        if not isfile(command_path) or not os.access(command_path, os.F_OK):
+    def __init__(self, openssl_binary, config_file, root_dir, crl_file):
+        if not isfile(openssl_binary) or not os.access(openssl_binary, os.F_OK):
             raise BackendError('OpenSSL command not found')
-        if not os.access(command_path, os.X_OK):
+        if not os.access(openssl_binary, os.X_OK):
             raise BackendError('OpenSSL command is not executable')
-        self._command_path = command_path
+        self._openssl_binary = openssl_binary
 
         if not isdir(root_dir):
             raise BackendError("OpenSSL config directory (root_dir) doesn't exist")
@@ -37,16 +37,16 @@ class OpenSSLBackend:
             raise BackendError('OpenSSL config directory (root_dir) should have "rwx" permissions')
         self._root_dir = root_dir
 
-        if not isfile(config_path):
+        if not isfile(config_file):
             raise BackendError('Config path is not a file')
-        self._config_path = config_path
+        self._config_path = config_file
 
-        if not isfile(crl_path):
+        if not isfile(crl_file):
             raise BackendError('Crl path is not a file')
-        self._crl_path = crl_path
+        self._crl_file = crl_file
 
         self._cnf = OpenSSLConfigParser()
-        with open(config_path) as f:
+        with open(config_file) as f:
             self._cnf.read_file(f)
 
     @property
@@ -77,7 +77,7 @@ class OpenSSLBackend:
             return join(self._root_dir, self._ca_section['dir'], 'certs')
 
     def _openssl(self, main_command, *params, input=None):
-        command = [self._command_path, main_command, '-config', self._config_path, *params]
+        command = [self._openssl_binary, main_command, '-config', self._config_path, *params]
         result = run(command, stdout=PIPE, stderr=PIPE, input=input, check=True,
                      universal_newlines=True)
         return result.stdout
@@ -158,5 +158,5 @@ class OpenSSLBackend:
 
     @property
     def version(self) -> str:
-        result = run([self._command_path, 'version'], stdout=PIPE, universal_newlines=True)
+        result = run([self._openssl_binary, 'version'], stdout=PIPE, universal_newlines=True)
         return result.stdout.rstrip()
