@@ -70,11 +70,21 @@ class CheckSiteManager:
                 result = self._make_result(future)
                 if result.succeeded:
                     self.succeeded.append(result)
-                elif result.skipped:
-                    self.skipped.append(result)
                 elif result.failed:
                     self.failed.append(result)
                 yield result
+
+    @property
+    def success_count(self):
+        return len(self.succeeded)
+
+    @property
+    def skip_count(self):
+        return len(self.skipped)
+
+    @property
+    def fail_count(self):
+        return len(self.failed)
 
     def _skip_urls(self):
         skipped_urls = set()
@@ -100,18 +110,6 @@ class CheckSiteManager:
         hostname, error_message = future.result()
         status = CheckSiteResult.FAILED if error_message else CheckSiteResult.SUCCEEDED
         return CheckSiteResult(hostname, status, error_message)
-
-    @property
-    def success_count(self):
-        return len(self.succeeded)
-
-    @property
-    def skip_count(self):
-        return len(self.skipped)
-
-    @property
-    def fail_count(self):
-        return len(self.failed)
 
     def _check(self, hostname):
         # OpenSSL is more strict about misconfigured servers,
