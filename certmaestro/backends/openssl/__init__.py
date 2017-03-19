@@ -1,6 +1,6 @@
 import os
 from os.path import isfile, join, isdir
-import subprocess
+from subprocess import run, PIPE
 from typing import Iterator
 from zope.interface import implementer
 from ...wrapper import Cert, PrivateKey, Crl, SerialNumber
@@ -77,14 +77,10 @@ class OpenSSLBackend:
             return join(self._root_dir, self._ca_section['dir'], 'certs')
 
     def _openssl(self, main_command, *params, input=None):
-        if input is not None:
-            input = input.encode()
         command = [self._command_path, main_command, '-config', self._config_path, *params]
-        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                input=input)
-        if result.returncode != 0:
-            raise ValueError(result.stderr.decode())
-        return result.stdout.decode()
+        result = run(command, stdout=PIPE, stderr=PIPE, input=input, check=True,
+                     universal_newlines=True)
+        return result.stdout
 
     def get_ca_cert(self) -> Cert:
         ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
@@ -162,6 +158,5 @@ class OpenSSLBackend:
 
     @property
     def version(self) -> str:
-        result = subprocess.run([self._command_path, 'version'], stdout=subprocess.PIPE)
-        cut_newline = slice(0, -1)
-        return result.stdout.decode()[cut_newline]
+        result = run([self._command_path, 'version'], stdout=PIPE, universal_newlines=True)
+        return result.stdout.rstrip()
