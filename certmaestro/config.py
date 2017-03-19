@@ -120,7 +120,7 @@ class BackendBuilder:
         for param in self:
             value = self._values.get(param.name, param.default)
             if value is None:
-                raise ValueError('Parameter %r is needed' % param.name)
+                raise ValueError(f'Parameter "{param.name}" is needed')
             if param.convert is not None:
                 value = param.convert(value)
                 self._values[param.name] = value
@@ -142,7 +142,7 @@ class BackendBuilder:
 
     def __setitem__(self, name, value):
         if name not in (param.name for param in self):
-            raise AttributeError('Name %r is not found in this builder' % name)
+            raise AttributeError(f'Name "{name}" is not found in this builder')
         # TODO: convert here?
         self._values[name] = value
 
