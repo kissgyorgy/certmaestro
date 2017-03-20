@@ -69,8 +69,8 @@ class BackendBuilder:
             if param.convert is not None:
                 value = param.convert(value)
                 self._values[param.name] = value
-            if param.validator is not None:
-                param.validator(value)
+            if param.validate is not None:
+                param.validate(value)
 
     def _validate_init(self):
         try:

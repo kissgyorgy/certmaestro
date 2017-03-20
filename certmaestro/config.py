@@ -82,7 +82,7 @@ class Param:
     name = attr.ib()
     help = attr.ib()
     default = attr.ib(default=None)
-    validator = attr.ib(default=None)
+    validate = attr.ib(default=None)
     convert = attr.ib(default=None)
 
     def __iter__(self):

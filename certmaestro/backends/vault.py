@@ -15,7 +15,7 @@ class VaultBackend:
     description = "Hashicorp's Vault: https://www.vaultproject.io"
 
     init_requires = (
-        Param('url', default='http://localhost:8200', validator=starts_with_http,
+        Param('url', default='http://localhost:8200', validate=starts_with_http,
               help='URL of the Vault server'),
         Param('token', help='Token for accessing Vault'),
         Param('mount_point', default='pki', help="Mount point of the 'pki' secret backend"),
