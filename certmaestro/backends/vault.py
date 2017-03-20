@@ -5,7 +5,7 @@ from requests.exceptions import RequestException
 from ..csr import CsrPolicy
 from ..exceptions import BackendError
 from ..wrapper import Cert, PrivateKey, Crl, SerialNumber
-from ..config import starts_with_http, strtobool, Param
+from ..config import strtobool, Param
 from .interfaces import IBackend
 
 
@@ -15,8 +15,7 @@ class VaultBackend:
     description = "Hashicorp's Vault: https://www.vaultproject.io"
 
     init_requires = (
-        Param('url', default='http://localhost:8200', validate=starts_with_http,
-              help='URL of the Vault server'),
+        Param('url', default='http://localhost:8200', help='URL of the Vault server'),
         Param('token', help='Token for accessing Vault'),
         Param('mount_point', default='pki', help="Mount point of the 'pki' secret backend"),
         Param('role', help='Role issuing certificates'),
@@ -31,6 +30,8 @@ class VaultBackend:
     )
 
     def __init__(self, url: str, token: str, mount_point: str, role: str):
+        if not url.startswith('http://') and not url.startswith('https://'):
+            raise BackendError('URL needs to start with http:// or https://')
         self._client = hvac.Client(url, token)
         # normalize mount_point to naked, so we can consistently use in strings
         self.mount_point = mount_point[:-1] if mount_point.endswith('/') else mount_point

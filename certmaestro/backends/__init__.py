@@ -57,20 +57,14 @@ class BackendBuilder:
             yield Param(**values)
 
     def validate(self):
-        self._validate_params()
+        self._check_missing()
         backend = self._validate_init()
         backend.validate_setup(**self.setup_params)
 
-    def _validate_params(self):
+    def _check_missing(self):
         for param in self:
-            value = self._values.get(param.name, param.default)
-            if value is None:
+            if param.default is None:
                 raise ValueError(f'Parameter "{param.name}" is needed')
-            if param.convert is not None:
-                value = param.convert(value)
-                self._values[param.name] = value
-            if param.validate is not None:
-                param.validate(value)
 
     def _validate_init(self):
         try:
