@@ -1,5 +1,4 @@
-from os import makedirs
-from os.path import expanduser, realpath, dirname
+from pathlib import Path
 from configparser import ConfigParser, RawConfigParser
 import attr
 
@@ -16,26 +15,25 @@ CERT_FIELDS = (
 
 
 class Config:
-    DEFAULT_PATH = expanduser('~/.config/certmaestro/certmaestro.ini')
+    DEFAULT_PATH = Path('~/.config/certmaestro/certmaestro.ini').expanduser()
 
-    def __init__(self, path=DEFAULT_PATH):
-        self.path = path
+    def __init__(self, path: Path=DEFAULT_PATH):
+        self.path = path.resolve()
         self._cfg = ConfigParser()
-        with open(path) as f:
+        with self.path.open() as f:
             self._cfg.read_file(f)
 
     @classmethod
-    def make_new(cls, path=DEFAULT_PATH):
+    def make_new(cls, path: Path=DEFAULT_PATH):
         self = object.__new__(cls)
-        makedirs(dirname(path), exist_ok=True)
-        self.path = path
+        self.path = path.resolve()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         self._cfg = ConfigParser()
         self._cfg.add_section('certmaestro')
         return self
 
     def __repr__(self):
-        full_path = expanduser(realpath(self.path))
-        return f'<Certmaestro Config: {full_path}>'
+        return f'<Certmaestro Config: {self.path}>'
 
     def __getitem__(self, name):
         return self._cfg.get('certmaestro', name)
@@ -47,7 +45,7 @@ class Config:
         self._cfg.read(self.path)
 
     def save(self):
-        with open(self.path, 'w') as configfile:
+        with self.path.open('w') as configfile:
             self._cfg.write(configfile)
 
     @property

@@ -1,5 +1,4 @@
 import os
-from os.path import isfile, join, isdir
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
@@ -29,28 +28,28 @@ class OpenSSLBackend:
     )
 
     def __init__(self, openssl_binary: Path, config_file: Path, root_dir: Path, crl_file: Path):
-        if not isfile(openssl_binary) or not os.access(openssl_binary, os.F_OK):
+        if not openssl_binary.is_file() or not os.access(openssl_binary, os.F_OK):
             raise BackendError('OpenSSL command not found')
         if not os.access(openssl_binary, os.X_OK):
             raise BackendError('OpenSSL command is not executable')
         self._openssl_binary = openssl_binary
 
-        if not isdir(root_dir):
+        if not root_dir.is_dir():
             raise BackendError("OpenSSL config directory (root_dir) doesn't exist")
         if not os.access(root_dir, os.R_OK | os.W_OK | os.X_OK):
             raise BackendError('OpenSSL config directory (root_dir) should have "rwx" permissions')
         self._root_dir = root_dir
 
-        if not isfile(config_file):
+        if not config_file.is_file():
             raise BackendError('Config path is not a file')
         self._config_path = config_file
 
-        if not isfile(crl_file):
+        if not crl_file.is_file():
             raise BackendError('Crl path is not a file')
         self._crl_file = crl_file
 
         self._cnf = OpenSSLConfigParser()
-        with open(config_file) as f:
+        with config_file.open() as f:
             self._cnf.read_file(f)
 
     @property
@@ -70,15 +69,15 @@ class OpenSSLBackend:
 
     @property
     def _new_certs_dir(self):
-        return join(self._root_dir, self._ca_section['new_certs_dir'])
+        return self._root_dir / self._ca_section['new_certs_dir']
 
     @property
     def _certs_dir(self):
         certs_dir = self._ca_section['certs']
         if certs_dir:
-            return join(self._root_dir, certs_dir)
+            return self._root_dir / certs_dir
         else:
-            return join(self._root_dir, self._ca_section['dir'], 'certs')
+            return self._root_dir / self._ca_section['dir'] / 'certs'
 
     def _openssl(self, main_command, *params, input=None):
         command = [self._openssl_binary, main_command, '-config', self._config_path, *params]
@@ -87,7 +86,7 @@ class OpenSSLBackend:
         return result.stdout
 
     def get_ca_cert(self) -> Cert:
-        ca_cert_path = join(self._root_dir, self._ca_section['certificate'])
+        ca_cert_path = self._root_dir / self._ca_section['certificate']
         return Cert.from_file(ca_cert_path)
 
     def _adapt_policy(self, policy):
@@ -143,22 +142,20 @@ class OpenSSLBackend:
         return key_pem, csr_pem
 
     def _save_pem(self, pem_data: str, filename: str):
-        path = join(self._certs_dir, filename)
-        with open(path, 'w') as f:
-            f.write(str(pem_data))
+        path = self._certs_dir / filename
+        path.write_text(pem_data)
 
     def get_cert(self, serial_str: str) -> Cert:
         serial_hex = SerialNumber(serial_str).as_hex()
-        cert_path = join(self._new_certs_dir, f'{serial_hex}.pem')
+        cert_path = self._new_certs_dir / f'{serial_hex}.pem'
         return Cert.from_file(cert_path)
 
     def get_cert_list(self) -> Iterator[Cert]:
-        for cert_filename in os.listdir(self._new_certs_dir):
-            cert_path = join(self._new_certs_dir, cert_filename)
+        for cert_path in self._new_certs_dir.iterdir():
             yield Cert.from_file(cert_path)
 
     def get_crl(self):
-        return Crl.from_file(self._crl_path)
+        return Crl.from_file(self._crl_file)
 
     @property
     def version(self) -> str:

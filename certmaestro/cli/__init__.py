@@ -1,4 +1,3 @@
-from os.path import exists
 import click
 import pkg_resources
 from tabulate import tabulate
@@ -9,6 +8,7 @@ from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
 from certmaestro.check import CheckSiteManager
 from .formatter import env
+from .utils import get_config_path
 
 
 class Obj:
@@ -19,15 +19,15 @@ class Obj:
         self.backend = self._get_backend()
 
     def _get_config(self):
-        root_ctx = self.ctx.find_root()
+        config_path = get_config_path(self.ctx)
         try:
-            return Config(root_ctx.params['config_path'])
+            return Config(config_path)
         except FileNotFoundError:
             click.confirm('This command needs configuration and an initialized backend!\n'
                           'Do you want to initialize one now?', abort=True)
             self.ctx.invoke(setup_backend)
             self._ask_run_command()
-            return Config(root_ctx.params['config_path'])
+            return Config(config_path)
 
     def _get_backend(self):
         while True:
@@ -50,7 +50,7 @@ ensure_config = click.make_pass_decorator(Obj, ensure=True)
 
 @click.group(invoke_without_command=True)
 @click.option('-c', '--config', 'config_path', default=Config.DEFAULT_PATH,
-              help='Default: ' + Config.DEFAULT_PATH,
+              help=f'Default: {Config.DEFAULT_PATH}',
               type=click.Path(dir_okay=False, writable=True, resolve_path=True))
 @click.option('-V', '--version', 'show_version', is_flag=True, is_eager=True,
               help='Show Certmaestro and backend versions.')
@@ -71,8 +71,8 @@ def main(ctx, config_path, show_version):
 @click.pass_context
 def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
-    config_path = ctx.find_root().params['config_path']
-    if exists(config_path):
+    config_path = get_config_path(ctx)
+    if config_path.exists():
         click.confirm(f'Configuration file already exists: {config_path}\n'
                       'Do you want to replace it?', abort=True)
         click.echo()
@@ -248,9 +248,8 @@ def version(ctx):
     """Same as --version."""
     certmaestro_version = pkg_resources.get_distribution('certmaestro').version
     click.echo('Certmaestro ' + certmaestro_version)
-    root_ctx = ctx.find_root()
     try:
-        config = Config(root_ctx.params['config_path'])
+        config = Config(get_config_path(ctx))
     except FileNotFoundError:
         click.echo('Backend is not configured or invalid config path')
     else:

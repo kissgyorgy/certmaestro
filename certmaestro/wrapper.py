@@ -2,6 +2,7 @@
     Wrapper around oscrypto and asn1crypto modules for a nicer API.
 """
 
+from pathlib import Path
 from oscrypto.keys import parse_certificate
 from asn1crypto import x509 as asn1x509, keys as asn1keys, pem as asn1pem, crl as asn1crl
 
@@ -67,8 +68,7 @@ class Name:
 class FromFileMixin:
     @classmethod
     def from_file(cls, path):
-        with open(path) as f:
-            return cls(f.read())
+        return cls(Path(path).read_text())
 
 
 class Cert(FromFileMixin):
