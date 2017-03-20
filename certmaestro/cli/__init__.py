@@ -103,13 +103,13 @@ def _ask_backend_params(BackendCls):
     builder = BackendBuilder(BackendCls)
 
     while True:
-        for param_name, question, default in builder:
-            value = click.prompt(question, default=default)
-            builder[param_name] = value
-        try:
-            builder.validate()
+        for param in builder:
+            value = click.prompt(param.help, default=param.default)
+            builder[param.name] = value
+
+        if builder.is_valid():
             break
-        except ValueError as exc:
+        else:
             click.echo(f'\nSomething is wrong with the configuration:\n  * {exc}')
 
     return builder
