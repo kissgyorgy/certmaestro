@@ -18,7 +18,6 @@ BACKENDS = [
 ]
 
 
-# FIXME: only use BackendBuilder to initialize and setup backends
 def get_backend(config):
     BackendCls = next(b for b in BACKENDS if b.name == config.backend_name)
     init_param_names = set(p.name for p in BackendCls.init_requires)
