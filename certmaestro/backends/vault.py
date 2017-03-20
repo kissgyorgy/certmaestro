@@ -30,7 +30,7 @@ class VaultBackend:
         Param('role_max_ttl', default=72, convert=int, help='Role max TTL (hours)')
     )
 
-    def __init__(self, url, token, mount_point, role):
+    def __init__(self, url: str, token: str, mount_point: str, role: str):
         self._client = hvac.Client(url, token)
         # normalize mount_point to naked, so we can consistently use in strings
         self.mount_point = mount_point[:-1] if mount_point.endswith('/') else mount_point
@@ -62,7 +62,9 @@ class VaultBackend:
         if f'{self.mount_point}/' in secret_backends['data']:
             raise ValueError('Secret backend already exists!')
 
-    def setup(self, *, common_name, max_lease_ttl, allowed_domains, allow_subdomains, role_max_ttl):  # noqa
+    # FIXME: allowed_domains type?
+    def setup(self, *, common_name: str, max_lease_ttl: int, allowed_domains,
+              allow_subdomains: bool, role_max_ttl: int):
         self._client.enable_secret_backend('pki', mount_point=self.mount_point)
         ttl = f'{max_lease_ttl}h'
         # vault mount-tune -max-lease-ttl=87600h pki

@@ -3,8 +3,8 @@ import click
 import pkg_resources
 from tabulate import tabulate
 from certmaestro import Config
-from certmaestro.backends import BACKENDS, get_backend
-from certmaestro.config import CERT_FIELDS, BackendBuilder
+from certmaestro.backends import BACKENDS, get_backend, BackendBuilder
+from certmaestro.config import CERT_FIELDS
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
 from certmaestro.check import CheckSiteManager

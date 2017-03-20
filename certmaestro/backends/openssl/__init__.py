@@ -1,5 +1,6 @@
 import os
 from os.path import isfile, join, isdir
+from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
 from zope.interface import implementer
@@ -17,14 +18,17 @@ class OpenSSLBackend:
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
 
     init_requires = (
-        Param('openssl_binary', help='Path to the openssl binary'),
-        Param('config_file', help='Path to the openssl config file (usually openssl.cnf)'),
+        Param('openssl_binary', help='Path to the openssl binary', convert=Path),
+        Param('config_file', help='Path to the openssl config file (usually openssl.cnf)',
+              convert=Path),
         Param('root_dir', help='Working directory for the OpenSSL files and directories. Relative '
-                               'directory definitions in config file are compared to this.'),
-        Param('crl_file', help='Path to the Certificate Revocation List file (usually crl.pem)'),
+                               'directory definitions in config file are compared to this.',
+              convert=Path),
+        Param('crl_file', help='Path to the Certificate Revocation List file (usually crl.pem)',
+              convert=Path),
     )
 
-    def __init__(self, openssl_binary, config_file, root_dir, crl_file):
+    def __init__(self, openssl_binary: Path, config_file: Path, root_dir: Path, crl_file: Path):
         if not isfile(openssl_binary) or not os.access(openssl_binary, os.F_OK):
             raise BackendError('OpenSSL command not found')
         if not os.access(openssl_binary, os.X_OK):

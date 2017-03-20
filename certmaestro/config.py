@@ -2,7 +2,6 @@ from os import makedirs
 from os.path import expanduser, realpath, dirname
 from configparser import ConfigParser, RawConfigParser
 import attr
-from .exceptions import BackendError
 
 
 CERT_FIELDS = (
@@ -93,75 +92,3 @@ class Param:
 
     def copy(self):
         return self.__class__(**attr.asdict(self))
-
-
-class BackendBuilder:
-    """Helps to setup the backend by the defined Params in init_requires and setup_requires."""
-
-    def __init__(self, backend_class, default_values=None):
-        self._backend_class = backend_class
-        # to avoid accidentally changing params on the backend class
-        self.init_requires = tuple(p.copy() for p in backend_class.init_requires)
-        self.setup_requires = tuple(p.copy() for p in backend_class.setup_requires)
-        self._values = default_values or dict()
-
-    def __iter__(self):
-        for param in (self.init_requires + self.setup_requires):
-            values = attr.asdict(param)
-            values['default'] = self._values.get(param.name, param.default)
-            yield Param(**values)
-
-    def validate(self):
-        self._validate_params()
-        backend = self._validate_init()
-        backend.validate_setup(**self.setup_params)
-
-    def _validate_params(self):
-        for param in self:
-            value = self._values.get(param.name, param.default)
-            if value is None:
-                raise ValueError(f'Parameter "{param.name}" is needed')
-            if param.convert is not None:
-                value = param.convert(value)
-                self._values[param.name] = value
-            if param.validator is not None:
-                param.validator(value)
-
-    def _validate_init(self):
-        try:
-            return self._backend_class(**self.init_params)
-        except BackendError as e:
-            raise ValueError(str(e))
-
-    def is_valid(self):
-        try:
-            self.validate()
-            return True
-        except ValueError:
-            return False
-
-    def __setitem__(self, name, value):
-        if name not in (param.name for param in self):
-            raise AttributeError(f'Name "{name}" is not found in this builder')
-        # TODO: convert here?
-        self._values[name] = value
-
-    def __getitem__(self, name):
-        return self._values.get(name)
-
-    @property
-    def all_params(self):
-        return {par.name: self._values.get(par.name, par.default) for par in self}
-
-    @property
-    def init_params(self):
-        return {par.name: self._values.get(par.name, par.default) for par in self.init_requires}
-
-    @property
-    def setup_params(self):
-        return {par.name: self._values.get(par.name, par.default) for par in self.setup_requires}
-
-    def setup_backend(self):
-        backend = self._backend_class(**self.init_params)
-        backend.setup(**self.setup_params)
-        return backend
