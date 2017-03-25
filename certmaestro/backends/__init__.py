@@ -6,6 +6,7 @@ from .mysql import MySQLBackend
 from .openssl import OpenSSLBackend
 from .postgres import PostgresBackend
 from .vault import VaultBackend
+from .easy_rsa import EasyRSA2Backend
 from ..config import Param
 
 
@@ -13,6 +14,7 @@ BACKENDS = [
     VaultBackend,
     FileBackend,
     OpenSSLBackend,
+    EasyRSA2Backend,
     PostgresBackend,
     MySQLBackend,
 ]
