@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
@@ -29,6 +30,9 @@ class OpenSSLBackend:
 
     def __init__(self, openssl_binary: Path, config_file: Path, root_dir: Path, crl_file: Path):
         if not openssl_binary.is_file() or not os.access(openssl_binary, os.F_OK):
+        if not self._check_file(openssl_binary):
+            openssl_binary = Path(shutil.which(openssl_binary))
+        if not self._check_file(openssl_binary):
             raise BackendError('OpenSSL command not found')
         if not os.access(openssl_binary, os.X_OK):
             raise BackendError('OpenSSL command is not executable')
@@ -51,6 +55,10 @@ class OpenSSLBackend:
         self._cnf = OpenSSLConfigParser()
         with config_file.open() as f:
             self._cnf.read_file(f)
+
+    @staticmethod
+    def _check_file(openssl_binary):
+        return openssl_binary.is_file() and os.access(openssl_binary, os.F_OK)
 
     @property
     def _ca_section(self):
