@@ -12,8 +12,8 @@ from ..config import Param
 BACKENDS = [
     VaultBackend,
     FileBackend,
-    PostgresBackend,
     OpenSSLBackend,
+    PostgresBackend,
     MySQLBackend,
 ]
 
