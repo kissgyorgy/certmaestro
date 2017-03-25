@@ -48,8 +48,7 @@ class OpenSSLBackend:
             raise BackendError('Config path is not a file')
         self._config_path = config_file
 
-        if not crl_file.is_file():
-            raise BackendError('Crl path is not a file')
+        # The CRL file not always exists, we should allow this and generate on demand
         self._crl_file = crl_file
 
         self._cnf = OpenSSLConfigParser()
