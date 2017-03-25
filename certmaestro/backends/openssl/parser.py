@@ -10,11 +10,16 @@ class OpenSSLInterpolation(Interpolation):
     _KEYCRE = re.compile(r"\$\{?(\w*)\}?")
 
     def before_get(self, parser, section, option, value, defaults):
-        ind = value.find('$')
-        if ind == -1:
+        dollar_ind = value.find('$')
+        if dollar_ind == -1:
             return value
 
-        m = self._KEYCRE.match(value[ind:])
+        colon_ind = value.find('::')
+        if colon_ind != -1 and value[dollar_ind + 1:colon_ind] == 'ENV':
+            env_name = value[colon_ind + 2:]
+            return parser.env.get(env_name)
+
+        m = self._KEYCRE.match(value[dollar_ind:])
         if m is None:
             raise InterpolationSyntaxError(option, section,
                                            "bad interpolation variable reference {value}")
@@ -32,3 +37,7 @@ class OpenSSLConfigParser(ConfigParser):
     _DEFAULT_INTERPOLATION = OpenSSLInterpolation()
     # OpenSSL section names usually contains space before and after
     SECTCRE = re.compile(r"\[\s*(?P<header>\w*)\s*\]")
+
+    def __init__(self, *args, env=None, **kwargs):
+        self.env = env
+        super().__init__(*args, **kwargs)

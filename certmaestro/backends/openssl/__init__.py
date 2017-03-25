@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Optional, Mapping
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
@@ -28,8 +29,8 @@ class OpenSSLBackend:
               convert=Path),
     )
 
-    def __init__(self, openssl_binary: Path, config_file: Path, root_dir: Path, crl_file: Path):
-        if not openssl_binary.is_file() or not os.access(openssl_binary, os.F_OK):
+    def __init__(self, openssl_binary: Path, config_file: Path, root_dir: Path, crl_file: Path,
+                 env: Optional[Mapping]=None):
         if not self._check_file(openssl_binary):
             openssl_binary = Path(shutil.which(openssl_binary))
         if not self._check_file(openssl_binary):
@@ -51,7 +52,10 @@ class OpenSSLBackend:
         # The CRL file not always exists, we should allow this and generate on demand
         self._crl_file = crl_file
 
-        self._cnf = OpenSSLConfigParser(inline_comment_prefixes=('#', ';'),
+        if env is None:
+            env = os.environ.copy()
+        self._cnf = OpenSSLConfigParser(inline_comment_prefixes=('#', ';'), env=env)
+
         with config_file.open() as f:
             self._cnf.read_file(f)
 
