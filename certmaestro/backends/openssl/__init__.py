@@ -1,6 +1,7 @@
 import os
 import shutil
 from typing import Optional, Mapping
+from configparser import MissingSectionHeaderError
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
@@ -57,7 +58,11 @@ class OpenSSLBackend:
         self._cnf = OpenSSLConfigParser(inline_comment_prefixes=('#', ';'), env=env)
 
         with config_file.open() as f:
-            self._cnf.read_file(f)
+            try:
+                self._cnf.read_file(f)
+            except MissingSectionHeaderError:
+                f.seek(0)
+                self._cnf.read_string('[dummy]' + f.read())
 
     @staticmethod
     def _check_file(openssl_binary):
