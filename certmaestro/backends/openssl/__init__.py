@@ -51,7 +51,7 @@ class OpenSSLBackend:
         # The CRL file not always exists, we should allow this and generate on demand
         self._crl_file = crl_file
 
-        self._cnf = OpenSSLConfigParser()
+        self._cnf = OpenSSLConfigParser(inline_comment_prefixes=('#', ';'),
         with config_file.open() as f:
             self._cnf.read_file(f)
 
