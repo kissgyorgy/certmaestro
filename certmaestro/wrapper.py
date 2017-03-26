@@ -154,7 +154,7 @@ class Cert(FromFileMixin):
         return self._cert['signature_algorithm']['algorithm'].native
 
 
-class PrivateKey:
+class PrivateKey(FromFileMixin):
 
     def __init__(self, pem_data: str):
         self._pem_data = pem_data
