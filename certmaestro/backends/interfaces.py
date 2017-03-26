@@ -1,6 +1,6 @@
 from typing import Iterator
 from zope.interface import Interface, Attribute
-from ..wrapper import PrivateKey, Cert, Crl
+from ..wrapper import PrivateKey, Cert, RevokedCert, Crl
 
 
 class IBackend(Interface):
@@ -20,7 +20,7 @@ class IBackend(Interface):
     def issue_cert(self, common_name) -> (PrivateKey, Cert):
         """Issue a new cert for a Common Name."""
 
-    def revoke_cert(self, serial_str):
+    def revoke_cert(self, serial_str) -> RevokedCert:
         """Revoke certificate by serial number."""
 
     def get_cert_list(self) -> Iterator[Cert]:

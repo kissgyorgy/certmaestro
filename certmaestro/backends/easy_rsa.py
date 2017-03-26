@@ -1,14 +1,15 @@
 import os
 from pathlib import Path
 from typing import Iterator
-from subprocess import run, PIPE, DEVNULL
+from subprocess import run, PIPE, DEVNULL, CalledProcessError
 from zope.interface import implementer
-from ..wrapper import PrivateKey, Cert, SerialNumber
+from ..wrapper import PrivateKey, Cert, RevokedCert, SerialNumber, Crl
 from ..config import Param
 from ..exceptions import BackendError
 from ..csr import CsrBuilder
 from .interfaces import IBackend
 from .openssl import OpenSSLBackend
+from .openssl.parser import OpenSSLDbParser
 
 
 @implementer(IBackend)
@@ -34,6 +35,7 @@ class EasyRSA2Backend:
         self._vars_file = vars_file
         self._env = self._get_full_env()
         self._openssl_backend = self._make_openssl_backend()
+        self._db = OpenSSLDbParser(self._key_dir / 'index.txt')
 
     def _get_full_env(self):
         varnames = ('EASY_RSA', 'OPENSSL', 'PKCS11TOOL', 'GREP', 'KEY_CONFIG', 'KEY_DIR',
@@ -84,12 +86,13 @@ class EasyRSA2Backend:
         cert_path = self._key_dir / f'{csr.common_name}.crt'
         return PrivateKey.from_file(key_path), Cert.from_file(cert_path)
 
-    def revoke_cert(self, serial_str) -> Cert:
-        certfile = self._key_dir / serial_str
-        result = run(['revoke-full', str(certfile)], cwd=self._root_dir, stdout=PIPE,
-                     stderr=PIPE, env=self._env, check=False, universal_newlines=True)
-        print(result.stdout, result.stderr)
-        return result.stdout
+    def revoke_cert(self, serial_str: str) -> RevokedCert:
+        entry = self._db.get_by_serial_number(serial_str)
+        # TODO: check for CalledProcessError and raise RevocationError()
+        self._run('revoke-full', entry.name.common_name)
+        for rc in Crl.from_file(self._key_dir / 'crl.pem'):
+            if rc.serial_number == SerialNumber(serial_str):
+                return rc
 
     def get_cert_list(self) -> Iterator[Cert]:
         dhparam_name = f"dh{self._env['KEY_SIZE']}.pem"
