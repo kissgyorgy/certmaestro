@@ -30,3 +30,9 @@ class TestName:
         })
         name = Name.from_asn1(asn1name)
         assert name.common_name == 'vpn.example3.com'
+
+    def test_names_are_comparable(self):
+        assert Name('/C=HU/L=Budapest/O=asf') == Name('/C=HU/L=Budapest/O=asf')
+
+    def test_names_are_equal_with_different_order(self):
+        assert Name('/C=HU/L=Budapest/O=asf') == Name('/O=asf/C=HU/L=Budapest')

@@ -73,6 +73,9 @@ class Name:
         values = {self._map[k]: v for k, v in raw_values.items()}
         self._name = asn1x509.Name.build(values)
 
+    def __eq__(self, other):
+        return self._name == other._name
+
     @classmethod
     def from_asn1(cls, name: asn1x509.Name):
         obj = cls.__new__(cls)

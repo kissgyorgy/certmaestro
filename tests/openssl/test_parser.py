@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from certmaestro.backends.openssl.parser import OpenSSLDbParser
+from certmaestro.wrapper import Name
 
 
 @pytest.fixture(scope='session')
@@ -27,4 +28,4 @@ class TestDatabaseParser:
 
     def test_get_by_serial_on_single_entry(self, data_dir):
         db = OpenSSLDbParser(data_dir / 'one_valid.txt')
-        assert db.get_by_serial_number('01').dist_name == '/C=HU/L=Budapest/O=asf'
+        assert db.get_by_serial_number('01').name == Name('/C=HU/L=Budapest/O=asf')
