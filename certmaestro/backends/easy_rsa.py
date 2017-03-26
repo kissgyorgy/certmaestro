@@ -94,8 +94,8 @@ class EasyRSA2Backend:
     def get_cert_list(self) -> Iterator[Cert]:
         dhparam_name = f"dh{self._env['KEY_SIZE']}.pem"
         for cert_path in Path(self._env['KEY_DIR']).glob('*.pem'):
-            # skip dhparam
-            if cert_path.name == dhparam_name:
+            # skip dhparam and crl.pem
+            if cert_path.name in (dhparam_name, 'crl.pem'):
                 continue
             yield Cert.from_file(cert_path)
 
