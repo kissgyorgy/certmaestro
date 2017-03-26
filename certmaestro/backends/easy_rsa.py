@@ -65,9 +65,8 @@ class EasyRSA2Backend:
         return OpenSSLBackend(openssl_binary, config_file, self._root_dir, crl_file, env=self._env)
 
     def _run(self, *params):
-        command_binary = self._root_dir / 'pkitool'
-        result = run([command_binary, '--batch', *params], cwd=self._root_dir, stdout=PIPE,
-                     stderr=PIPE, env=self._env, check=True, universal_newlines=True)
+        result = run(params, cwd=self._root_dir, stdout=PIPE, stderr=PIPE, env=self._env,
+                     check=True, universal_newlines=True)
         return result.stdout
 
     def get_ca_cert(self) -> Cert:
@@ -80,7 +79,7 @@ class EasyRSA2Backend:
         return self._openssl_backend.get_csr_defaults()
 
     def issue_cert(self, csr: CsrBuilder) -> (PrivateKey, Cert):
-        self._run(csr.common_name)
+        self._run('pkitool', '--batch', csr.common_name)
         key_path = self._key_dir / f'{csr.common_name}.key'
         cert_path = self._key_dir / f'{csr.common_name}.crt'
         return PrivateKey.from_file(key_path), Cert.from_file(cert_path)
@@ -107,5 +106,5 @@ class EasyRSA2Backend:
 
     @property
     def version(self) -> str:
-        pkitool_version = self._run('--version').rstrip()
+        pkitool_version = self._run('pkitool', '--version').rstrip()
         return f'{self.name} ({pkitool_version})'
