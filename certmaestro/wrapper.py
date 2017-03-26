@@ -1,7 +1,7 @@
 """
     Wrapper around oscrypto and asn1crypto modules for a nicer API.
 """
-
+import re
 from pathlib import Path
 from oscrypto.keys import parse_certificate
 from asn1crypto import x509 as asn1x509, keys as asn1keys, pem as asn1pem, crl as asn1crl
@@ -30,6 +30,11 @@ class SerialNumber:
     def __repr__(self):
         return f'<{self.__class__.__name__}: {self._value}>'
 
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self._value == other._value
+
     def as_hex(self, prefix=False):
         serial_hex = self._decolonize(self._value)
         return '0x' + serial_hex if prefix else serial_hex
@@ -49,9 +54,29 @@ class SerialNumber:
 
 
 class Name:
+    _map = {
+        'C': 'country_name',
+        'O': 'organization_name',
+        'OU': 'organizational_unit_name',
+        'CN': 'common_name',
+        'L': 'locality_name',
+        'ST': 'state_or_province_name',
+        'emailAddress': 'email_address',
+    }
+    _name_re = re.compile(r'/([A-Z]+)=([^/]*)')
 
     def __init__(self, name: asn1x509.Name):
         self._name = name
+
+    @classmethod
+    def from_dict(cls, values):
+        return cls(asn1x509.Name.build(values))
+
+    @classmethod
+    def from_str(cls, name_str):
+        raw_values = dict(cls._name_re.findall(name_str))
+        values = {cls._map[k]: v for k, v in raw_values.items()}
+        return cls.from_dict(values)
 
     @property
     def common_name(self):

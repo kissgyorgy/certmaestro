@@ -1,20 +1,20 @@
-from certmaestro.wrapper import hexify
+import pytest
+from certmaestro.wrapper import Name
 
 
-class Testhexify:
-    def test_small_integer(self):
-        assert hexify(1) == '01'
+class TestName:
+    def test_name_from_str(self):
+        long_name = ('/C=HU/ST=Pest megye/L=Budapest/O=Certmaestro/OU=Single/CN=vpn.example.com'
+                     '/name=EasyRSA/emailAddress=somebody@somewhere.com')
+        name = Name.from_str(long_name)
+        assert name.common_name == 'vpn.example.com'
 
-    def test_zero(self):
-        assert hexify(0) == '00'
-
-    def test_even_length(self):
-        assert hexify(17) == '11'
-
-    def test_contains_letter(self):
-        assert hexify(9999) == '27:0f'
-
-    def test_long_integer(self):
-        long_int = 62875419084137315581790470316441984428164377498
-        expected = '0b:03:6e:69:d8:f3:ac:3c:d4:b0:6f:16:31:50:85:68:5c:2d:eb:9a'
-        assert hexify(long_int) == expected
+    def test_name_from_dict(self):
+        name = Name.from_dict({
+            'country_name': 'HU',
+            'state_or_province_name': 'Pest megye',
+            'locality_name': 'Budapest',
+            'organization_name': 'Certmaestro',
+            'common_name': 'vpn.example2.com'
+        })
+        assert name.common_name == 'vpn.example2.com'
