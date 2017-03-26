@@ -6,7 +6,7 @@ from configparser import (
     Interpolation, InterpolationSyntaxError, InterpolationMissingOptionError,
     ConfigParser
 )
-from ...wrapper import FromFileMixin, SerialNumber
+from ...wrapper import FromFileMixin, SerialNumber, Name
 
 
 class OpenSSLInterpolation(Interpolation):
@@ -55,7 +55,7 @@ class OpenSSLDbEntry:
     revocation = attr.ib()
     serial_number = attr.ib()
     filename = attr.ib()
-    dist_name = attr.ib()
+    name = attr.ib()
 
 
 class OpenSSLDbParser(FromFileMixin):
@@ -98,10 +98,10 @@ class OpenSSLDbParser(FromFileMixin):
     def _iter_file(self):
         for line in iter(self._mm.readline, b''):
             columns = line.rstrip().decode().split('\t')
-            status, expiration, revocation, serial, filename, dist_name = columns
-            serial_number = SerialNumber(serial)
-            yield OpenSSLDbEntry(status, expiration, revocation, serial_number, filename,
-                                 dist_name)
+            status, expiration, revocation, serial_str, filename, name_str = columns
+            serial_number = SerialNumber(serial_str)
+            name = Name(name_str)
+            yield OpenSSLDbEntry(status, expiration, revocation, serial_number, filename, name)
 
     def get_by_serial_number(self, serial_str: str):
         for entry in self:
