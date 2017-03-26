@@ -4,7 +4,10 @@
 import re
 from pathlib import Path
 from oscrypto.keys import parse_certificate
-from asn1crypto import x509 as asn1x509, keys as asn1keys, pem as asn1pem, crl as asn1crl
+import asn1crypto.x509 as asn1x509
+import asn1crypto.keys as asn1keys
+import asn1crypto.pem as asn1pem
+import asn1crypto.crl as asn1crl
 
 
 class SerialNumber:
@@ -65,18 +68,20 @@ class Name:
     }
     _name_re = re.compile(r'/([A-Z]+)=([^/]*)')
 
-    def __init__(self, name: asn1x509.Name):
-        self._name = name
+    def __init__(self, name_str: str):
+        raw_values = dict(self._name_re.findall(name_str))
+        values = {self._map[k]: v for k, v in raw_values.items()}
+        self._name = asn1x509.Name.build(values)
+
+    @classmethod
+    def from_asn1(cls, name: asn1x509.Name):
+        obj = cls.__new__(cls)
+        obj._name = name
+        return obj
 
     @classmethod
     def from_dict(cls, values):
-        return cls(asn1x509.Name.build(values))
-
-    @classmethod
-    def from_str(cls, name_str):
-        raw_values = dict(cls._name_re.findall(name_str))
-        values = {cls._map[k]: v for k, v in raw_values.items()}
-        return cls.from_dict(values)
+        return cls.from_asn1(asn1x509.Name.build(values))
 
     @property
     def common_name(self):
@@ -135,11 +140,11 @@ class Cert(FromFileMixin):
 
     @property
     def issuer(self):
-        return Name(self._cert.issuer)
+        return Name.from_asn1(self._cert.issuer)
 
     @property
     def subject(self):
-        return Name(self._cert.subject)
+        return Name.from_asn1(self._cert.subject)
 
     @property
     def ca(self):
@@ -189,8 +194,12 @@ class PrivateKey(FromFileMixin):
 
 
 class PublicKey:
-    def __init__(self, public_key: asn1keys.PublicKeyInfo):
-        self._public_key = public_key
+
+    @classmethod
+    def from_asn1(cls, public_key: asn1keys.PublicKeyInfo):
+        obj = cls()
+        obj._public_key = public_key
+        return obj
 
     @property
     def modulus(self):
@@ -217,8 +226,11 @@ class PublicKey:
 
 class RevokedCert:
 
-    def __init__(self, revoked_cert: asn1crl.RevokedCertificate):
-        self._rev_cert = revoked_cert
+    @classmethod
+    def from_asn1(cls, revoked_cert: asn1crl.RevokedCertificate):
+        obj = cls()
+        obj._rev_cert = revoked_cert
+        return obj
 
     @property
     def serial_number(self):
@@ -246,8 +258,15 @@ class Crl(FromFileMixin):
 
         self._crl = asn1crl.CertificateList.load(der_bytes)
 
+    @classmethod
+    def from_asn1(cls, crl: asn1crl.CertificateList):
+        obj = cls.__new__(cls)
+        obj._crl = crl
+        return obj
+
     def __iter__(self):
-        return iter(RevokedCert(c) for c in self._crl['tbs_cert_list']['revoked_certificates'])
+        return iter(RevokedCert.from_asn1(c)
+                    for c in self._crl['tbs_cert_list']['revoked_certificates'])
 
     @property
     def this_update(self):
@@ -259,4 +278,4 @@ class Crl(FromFileMixin):
 
     @property
     def issuer(self):
-        return Name(self._crl['tbs_cert_list']['issuer'])
+        return Name.from_asn1(self._crl['tbs_cert_list']['issuer'])
