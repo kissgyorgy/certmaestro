@@ -1,3 +1,4 @@
+import ssl
 import click
 import pkg_resources
 from tabulate import tabulate
@@ -7,6 +8,7 @@ from certmaestro.config import CERT_FIELDS
 from certmaestro.exceptions import BackendError
 from certmaestro.csr import CsrPolicy, CsrBuilder
 from certmaestro.check import CheckSiteManager
+from certmaestro.wrapper import Cert
 from .formatter import env
 from .utils import get_config_path
 
@@ -209,6 +211,16 @@ def show_crl(obj):
 @ensure_config
 def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
+
+
+@main.command('show-site-cert')
+@click.argument('hostname')
+@click.option('-p', '--port', default=443, help='TCP port number. Default: 443')
+def show_site_cert(hostname, port):
+    """Download the certificate from a website and show information about it."""
+    cert_pem = ssl.get_server_certificate((hostname, port))
+    template = env.get_template('certmaestro_format.jinja2')
+    click.echo(template.render(cert=Cert(cert_pem)))
 
 
 @main.command('check-site', short_help='Check website(s) certificate(s).')
