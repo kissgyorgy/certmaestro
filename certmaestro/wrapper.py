@@ -176,7 +176,7 @@ class Cert(FromFileMixin):
 
     @property
     def public_key(self):
-        return PublicKey(self._cert.public_key)
+        return PublicKey.from_asn1(self._cert.public_key)
 
     @property
     def signature(self):
