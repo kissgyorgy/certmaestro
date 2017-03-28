@@ -9,15 +9,15 @@ def crl():
     """Handle Certification revocation list."""
 
 
-@crl.command('update-crl')
+@crl.command()
 @ensure_config
-def update_crl(obj):
+def update(obj):
     """Update the Certificate Revocation List (CRL)."""
 
 
-@crl.command('show-crl')
+@crl.command()
 @ensure_config
-def show_crl(obj):
+def show(obj):
     """Show the Certificate Revocation List."""
     crl = obj.backend.get_crl()
     click.echo(f'Issuer Common Name:    {crl.issuer.common_name}')

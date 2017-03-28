@@ -11,17 +11,17 @@ def site():
     """Live website certificate checks."""
 
 
-@site.command('show-site-cert')
+@site.command('show-cert')
 @click.argument('hostname')
 @click.option('-p', '--port', default=443, help='TCP port number. Default: 443')
-def show_site_cert(hostname, port):
+def show_cert(hostname, port):
     """Download the certificate from a website and show information about it."""
     cert_pem = ssl.get_server_certificate((hostname, port))
     template = env.get_template('certmaestro_format.jinja2')
     click.echo(template.render(cert=Cert(cert_pem)))
 
 
-@site.command('check-site', short_help='Check website(s) certificate(s).')
+@site.command(short_help='Check website(s) certificate(s).')
 @click.argument('urls', metavar='[SITE1] [SITE2] [...]', nargs=-1)
 @click.option('-t', '--timeout', default=3.0,
               help='HTTP request timeout in seconds for individual requests.')
@@ -29,7 +29,7 @@ def show_site_cert(hostname, port):
 @click.option('-f', '--follow-redirects', 'redirect', is_flag=True,
               help='Follow redirects (disabled by default).')
 @click.pass_context
-def check_sites(ctx, urls, timeout, retries, redirect):
+def check(ctx, urls, timeout, retries, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
     This doesn't say anything about your whole webserver configuration, only check

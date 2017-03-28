@@ -20,7 +20,7 @@ class Obj:
         except FileNotFoundError:
             click.confirm('This command needs configuration and an initialized backend!\n'
                           'Do you want to initialize one now?', abort=True)
-            self.ctx.invoke(setup_backend)
+            self.ctx.invoke(setup)
             self._ask_run_command()
             return Config(config_path)
 
@@ -32,7 +32,7 @@ class Obj:
                 click.echo(f'Something is wrong with the {self.config.backend_name} '
                            f'backend configuration:\n  * {exc}')
                 click.confirm('Would you like to reconfigure it?', abort=True)
-                self.ctx.invoke(setup_backend)
+                self.ctx.invoke(setup)
                 self._ask_run_command()
 
     def _ask_run_command(self):
@@ -48,9 +48,9 @@ def config():
     """Manage Certmaestro configuration."""
 
 
-@config.command('setup-backend')
+@config.command()
 @click.pass_context
-def setup_backend(ctx):
+def setup(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
     config_path = get_config_path(ctx)
     _check_config_path(config_path)
@@ -105,7 +105,7 @@ def _make_new_config(builder, config_path):
     config.save()
 
 
-@config.command('show-config')
+@config.command()
 @ensure_config
-def show_config(obj):
+def show(obj):
     """Show saved configuration options."""

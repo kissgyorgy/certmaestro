@@ -12,9 +12,9 @@ def cert():
     """Issue, sign, revoke and view certificates."""
 
 
-@cert.command('issue')
+@cert.command()
 @ensure_config
-def issue_cert(obj):
+def issue(obj):
     """Issue a new certificate."""
     policy = obj.backend.get_csr_policy()
     defaults = obj.backend.get_csr_defaults()
@@ -25,26 +25,26 @@ def issue_cert(obj):
     key, cert = obj.backend.issue_cert(csr)
 
 
-@cert.command('show-cert')
+@cert.command()
 @click.argument('serial_number')
 @ensure_config
-def show_cert(obj, serial_number):
+def show(obj, serial_number):
     """Show certificate details."""
     template = env.get_template('certmaestro_format.jinja2')
     cert = obj.backend.get_cert(serial_number.lower())
     click.echo(template.render(cert=cert))
 
 
-@cert.command('show-ca-cert')
+@cert.command('show-ca')
 @ensure_config
-def show_ca_cert(obj):
+def show_ca(obj):
     """Show CA certificate details."""
     cert = obj.backend.get_ca_cert()
     template = env.get_template('certmaestro_format.jinja2')
     click.echo(template.render(cert=cert))
 
 
-@cert.command('list-certs')
+@cert.command('list')
 @ensure_config
 def list_certs(obj):
     """List issued certificates."""
@@ -55,16 +55,16 @@ def list_certs(obj):
     click.echo(tabulate(cert_table, headers=headers, numalign='left'))
 
 
-@cert.command('revoke-cert')
+@cert.command()
 @click.argument('serial_number')
 @ensure_config
-def revoke_cert(obj, serial_number):
+def revoke(obj, serial_number):
     """Revoke a certificate."""
     result = obj.backend.revoke_cert(serial_number)
     click.echo(result)
 
 
-@cert.command('deploy-cert')
+@cert.command()
 @ensure_config
-def deploy_cert(obj):
+def deploy(obj):
     """Copy the certificate via SSH to the given host."""
