@@ -69,7 +69,27 @@ def main(ctx, config_path, show_version):
         click.echo(help_text)
 
 
-@main.command('setup-backend')
+@main.group()
+def config():
+    """Manage Certmaestro configuration."""
+
+
+@main.group()
+def cert():
+    """Issue, sign, revoke and view certificates."""
+
+
+@main.group()
+def crl():
+    """Handle Certification revocation list."""
+
+
+@main.group()
+def site():
+    """Live website certificate checks."""
+
+
+@config.command('setup-backend')
 @click.pass_context
 def setup_backend(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
@@ -126,13 +146,13 @@ def _make_new_config(builder, config_path):
     config.save()
 
 
-@main.command('show-config')
+@config.command('show-config')
 @ensure_config
 def show_config(obj):
     """Show saved configuration options."""
 
 
-@main.command('issue-cert')
+@cert.command('issue')
 @ensure_config
 def issue_cert(obj):
     """Issue a new certificate."""
@@ -145,7 +165,7 @@ def issue_cert(obj):
     key, cert = obj.backend.issue_cert(csr)
 
 
-@main.command('show-cert')
+@cert.command('show-cert')
 @click.argument('serial_number')
 @ensure_config
 def show_cert(obj, serial_number):
@@ -155,7 +175,7 @@ def show_cert(obj, serial_number):
     click.echo(template.render(cert=cert))
 
 
-@main.command('show-ca-cert')
+@cert.command('show-ca-cert')
 @ensure_config
 def show_ca_cert(obj):
     """Show CA certificate details."""
@@ -164,7 +184,7 @@ def show_ca_cert(obj):
     click.echo(template.render(cert=cert))
 
 
-@main.command('list-certs')
+@cert.command('list-certs')
 @ensure_config
 def list_certs(obj):
     """List issued certificates."""
@@ -175,7 +195,7 @@ def list_certs(obj):
     click.echo(tabulate(cert_table, headers=headers, numalign='left'))
 
 
-@main.command('revoke-cert')
+@cert.command('revoke-cert')
 @click.argument('serial_number')
 @ensure_config
 def revoke_cert(obj, serial_number):
@@ -184,13 +204,13 @@ def revoke_cert(obj, serial_number):
     click.echo(result)
 
 
-@main.command('update-crl')
+@crl.command('update-crl')
 @ensure_config
 def update_crl(obj):
     """Update the Certificate Revocation List (CRL)."""
 
 
-@main.command('show-crl')
+@crl.command('show-crl')
 @ensure_config
 def show_crl(obj):
     """Show the Certificate Revocation List."""
@@ -207,13 +227,13 @@ def show_crl(obj):
         click.echo('No certificates has been revoked yet!')
 
 
-@main.command('deploy-cert')
+@cert.command('deploy-cert')
 @ensure_config
 def deploy_cert(obj):
     """Copy the certificate via SSH to the given host."""
 
 
-@main.command('show-site-cert')
+@site.command('show-site-cert')
 @click.argument('hostname')
 @click.option('-p', '--port', default=443, help='TCP port number. Default: 443')
 def show_site_cert(hostname, port):
@@ -223,7 +243,7 @@ def show_site_cert(hostname, port):
     click.echo(template.render(cert=Cert(cert_pem)))
 
 
-@main.command('check-site', short_help='Check website(s) certificate(s).')
+@site.command('check-site', short_help='Check website(s) certificate(s).')
 @click.argument('urls', metavar='[SITE1] [SITE2] [...]', nargs=-1)
 @click.option('-t', '--timeout', default=3.0,
               help='HTTP request timeout in seconds for individual requests.')
@@ -231,7 +251,7 @@ def show_site_cert(hostname, port):
 @click.option('-f', '--follow-redirects', 'redirect', is_flag=True,
               help='Follow redirects (disabled by default).')
 @click.pass_context
-def check_site(ctx, urls, timeout, retries, redirect):
+def check_sites(ctx, urls, timeout, retries, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
     This doesn't say anything about your whole webserver configuration, only check
