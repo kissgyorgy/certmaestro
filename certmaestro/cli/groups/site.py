@@ -2,8 +2,8 @@ import ssl
 import click
 from certmaestro.wrapper import Cert
 from certmaestro.check import CheckSiteManager
-from . import main
 from ..formatter import env
+from . import main
 
 
 @main.group()

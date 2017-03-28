@@ -1,6 +1,7 @@
 import click
 from tabulate import tabulate
-from . import main, ensure_config
+from .config import ensure_config
+from . import main
 
 
 @main.group()

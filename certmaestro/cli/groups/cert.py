@@ -3,7 +3,8 @@ from tabulate import tabulate
 from certmaestro.csr import CsrPolicy, CsrBuilder
 from certmaestro.config import CERT_FIELDS
 from ..formatter import env
-from . import main, ensure_config
+from .config import ensure_config
+from . import main
 
 
 @main.group()
