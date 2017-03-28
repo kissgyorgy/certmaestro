@@ -13,7 +13,7 @@ install_requires = [
 ]
 
 console_scripts = [
-    'certmaestro = certmaestro.cli:main',
+    'certmaestro = certmaestro.cli.groups:main',
 ]
 
 classifiers = [
