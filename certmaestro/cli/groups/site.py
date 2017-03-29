@@ -1,7 +1,7 @@
 import ssl
 import click
 from certmaestro.wrapper import Cert
-from certmaestro.check import CheckSiteManager
+from certmaestro.check import CheckSiteManager, parse_socket_error_message
 from ..formatter import env
 from . import main
 
@@ -13,12 +13,21 @@ def site():
 
 @site.command('show-cert')
 @click.argument('hostname')
-def show_cert(hostname, port):
-    """Download the certificate from a website and show information about it."""
-    cert_pem = ssl.get_server_certificate((hostname, port))
-    template = env.get_template('certmaestro_format.jinja2')
-    click.echo(template.render(cert=Cert(cert_pem)))
 @click.argument('port', default=443, required=False, metavar='[PORT:443]')
+@click.pass_context
+def show_cert(ctx, hostname, port):
+    """Download the certificate from a website and show information about it.
+    \b
+    You can optionally give a port number which is 443 by default.
+    """
+    try:
+        cert_pem = ssl.get_server_certificate((hostname, port))
+    except ssl.SSLError as e:
+        click.echo('Error: ' + parse_socket_error_message(e.args[1]))
+        ctx.abort()
+    else:
+        template = env.get_template('certmaestro_format.jinja2')
+        click.echo(template.render(cert=Cert(cert_pem)))
 
 
 @site.command(short_help='Check website(s) certificate(s).')

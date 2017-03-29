@@ -19,12 +19,12 @@ def openssl_check_hostname(hostname):
     except socket.timeout as e:
         return 'Timed out'
     except OSError as e:
-        return _parse_socket_error_message(e.args[1])
+        return parse_socket_error_message(e.args[1])
     except ssl.CertificateError as e:
         return str(e)
 
 
-def _parse_socket_error_message(message):
+def parse_socket_error_message(message):
     # example: "[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:749)"
     start_ind = message.find(']')
     if start_ind > -1:
