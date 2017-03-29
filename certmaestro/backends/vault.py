@@ -13,6 +13,7 @@ from .interfaces import IBackend
 class VaultBackend:
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"
+    threadsafe = False
 
     init_requires = (
         Param('url', default='http://localhost:8200', help='URL of the Vault server'),

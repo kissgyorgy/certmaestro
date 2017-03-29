@@ -6,3 +6,4 @@ from .interfaces import IBackend
 class MySQLBackend:
     name = 'MySQL'
     description = 'Storing certificates in a MySQL database'
+    threadsafe = True

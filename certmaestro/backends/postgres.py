@@ -6,3 +6,4 @@ from .interfaces import IBackend
 class PostgresBackend:
     name = 'PostgreSQL'
     description = 'Storing certificates in a PostgreSQL database'
+    threadsafe = True

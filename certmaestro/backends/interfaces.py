@@ -4,8 +4,11 @@ from ..wrapper import PrivateKey, Cert, RevokedCert, Crl
 
 
 class IBackend(Interface):
-    init_requires = Attribute('Params required for backend init like url or file path')
-    setup_requires = Attribute('Param required for setting up backend for the first time')
+    name = Attribute('Official name of the backend.')
+    description = Attribute('One-line description about the backend.')
+    threadsafe = Attribute('Tells if the backend can be used from multiple threads.')
+    init_requires = Attribute('Params required for backend init like url or file path.')
+    setup_requires = Attribute('Param required for setting up backend for the first time.')
     version = Attribute('Backend software or library version.')
 
     def validate_setup(self, **kwargs):

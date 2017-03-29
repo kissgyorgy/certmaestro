@@ -16,6 +16,7 @@ from .openssl.parser import OpenSSLDbParser
 class EasyRSA2Backend:
     name = 'Easy-RSA 2.X'
     description = "OpenVPN's simple shell-based CA utility: https://github.com/OpenVPN/easy-rsa"
+    threadsafe = False
 
     init_requires = (
         Param('root_dir', help=f'Where the files of {name} are stored '
