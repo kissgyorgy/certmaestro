@@ -1,7 +1,6 @@
 from typing import Mapping
 import attr
 from ..exceptions import BackendError
-from .file import FileBackend
 from .mysql import MySQLBackend
 from .openssl import OpenSSLBackend
 from .postgres import PostgresBackend
@@ -12,7 +11,6 @@ from ..config import Param
 
 BACKENDS = [
     VaultBackend,
-    FileBackend,
     OpenSSLBackend,
     EasyRSA2Backend,
     PostgresBackend,
