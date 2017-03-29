@@ -59,13 +59,14 @@ def setup(ctx):
     backend = builder.setup_backend()
     _make_new_config(builder, config_path)
     click.echo(f'Saved configuration to {config_path}')
-    click.echo(f'Successfully initialized {backend.name}. You can issue certificates now!')
+    click.secho(f'Successfully initialized {backend.name}. You can issue certificates now!',
+                fg='green')
 
 
 def _check_config_path(config_path):
     if config_path.exists():
-        click.confirm(f'Configuration file already exists: {config_path}\n'
-                      'Do you want to replace it?', abort=True)
+        click.secho(f'Configuration file already exists: {config_path}', fg='yellow')
+        click.confirm('Do you want to replace it?', abort=True)
         click.echo()
 
 
