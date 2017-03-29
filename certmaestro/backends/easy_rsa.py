@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import Iterator
-from subprocess import run, PIPE, DEVNULL, CalledProcessError
+from subprocess import run, PIPE, DEVNULL
 from zope.interface import implementer
 from ..wrapper import PrivateKey, Cert, RevokedCert, SerialNumber, Crl
 from ..config import Param
