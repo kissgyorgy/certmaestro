@@ -68,3 +68,10 @@ def revoke(obj, serial_number):
 @ensure_config
 def deploy(obj):
     """Copy the certificate via SSH to the given host."""
+
+
+@cert.command()
+@click.argument('email_address')
+@ensure_config
+def send(obj, email_address):
+    """Send certificate in email."""
