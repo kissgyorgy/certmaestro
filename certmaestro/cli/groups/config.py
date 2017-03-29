@@ -56,6 +56,7 @@ def setup(ctx):
     _check_config_path(config_path)
     BackendCls = _select_backend()
     builder = _ask_backend_params(BackendCls)
+    backend = builder.setup_backend()
     _make_new_config(builder, config_path)
     click.echo(f'Saved configuration to {config_path}')
     click.echo(f'Successfully initialized {backend.name}. You can issue certificates now!')
@@ -99,9 +100,8 @@ def _ask_backend_params(BackendCls):
 
 
 def _make_new_config(builder, config_path):
-    backend = builder.setup_backend()
     config = Config.make_new(config_path)
-    config.backend_name = backend.name
+    config.backend_name = builder.backend_name
     str_values = {k: str(v) for k, v in builder.init_params.items()}
     config.backend_config.update(str_values)
     config.save()

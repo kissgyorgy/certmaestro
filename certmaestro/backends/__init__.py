@@ -99,3 +99,7 @@ class BackendBuilder:
         backend = self._backend_class(**self.init_params)
         backend.setup(**self.setup_params)
         return backend
+
+    @property
+    def backend_name(self):
+        return self._backend_class.name
