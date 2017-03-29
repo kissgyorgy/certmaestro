@@ -88,10 +88,12 @@ def _ask_backend_params(BackendCls):
             value = click.prompt(param.help, default=param.default)
             builder[param.name] = value
 
-        if builder.is_valid():
-            break
+        try:
+            builder.validate()
+        except ValueError as exc:
+            click.secho(f'\nSomething is wrong with the configuration:\n  * {exc}\n', fg='red')
         else:
-            click.echo(f'\nSomething is wrong with the configuration:\n  * {exc}')
+            break
 
     return builder
 
