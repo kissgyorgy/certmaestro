@@ -1,6 +1,6 @@
 from typing import Iterator
-from ..wrapper import PrivateKey, Cert, RevokedCert, Crl
 from abc import ABCMeta, abstractmethod
+from ..wrapper import PrivateKey, Cert, RevokedCert, Crl
 
 
 class IBackend(metaclass=ABCMeta):

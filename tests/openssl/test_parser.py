@@ -1,6 +1,6 @@
 import pytest
 from pathlib import Path
-from certmaestro.backends.openssl.parser import OpenSSLDbParser
+from certmaestro.backends.openssl import OpenSSLDbParser
 from certmaestro.wrapper import Name
 
 
