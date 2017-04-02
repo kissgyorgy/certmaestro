@@ -1,9 +1,7 @@
-from zope.interface import implementer
 from .interfaces import IBackend
 
 
-@implementer(IBackend)
-class PostgresBackend:
+class PostgresBackend(IBackend):
     name = 'PostgreSQL'
     description = 'Storing certificates in a PostgreSQL database'
     threadsafe = True

@@ -1,15 +1,37 @@
 from typing import Iterator
-from zope.interface import Interface, Attribute
 from ..wrapper import PrivateKey, Cert, RevokedCert, Crl
+from abc import ABCMeta, abstractmethod
 
 
-class IBackend(Interface):
-    name = Attribute('Official name of the backend.')
-    description = Attribute('One-line description about the backend.')
-    threadsafe = Attribute('Tells if the backend can be used from multiple threads.')
-    init_requires = Attribute('Params required for backend init like url or file path.')
-    setup_requires = Attribute('Param required for setting up backend for the first time.')
-    version = Attribute('Backend software or library version.')
+class IBackend(metaclass=ABCMeta):
+    @property
+    @abstractmethod
+    def name(self):
+        """Official name of the backend."""
+
+    @property
+    @abstractmethod
+    def description(self):
+        """One-line description about the backend."""
+
+    @property
+    @abstractmethod
+    def threadsafe(self):
+        """Tells if the backend can be used from multiple threads."""
+
+    @property
+    @abstractmethod
+    def init_requires(self):
+        """Params required for backend init like url or file path."""
+
+    @property
+    def setup_requires(self):
+        """Param required for setting up backend for the first time."""
+
+    @property
+    @abstractmethod
+    def version(self):
+        """Backend software or library version."""
 
     def validate_setup(self, **kwargs):
         """Check if setup would be successful."""

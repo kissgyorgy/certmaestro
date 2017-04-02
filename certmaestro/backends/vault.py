@@ -1,5 +1,4 @@
 from typing import Iterator
-from zope.interface import implementer
 import hvac
 from requests.exceptions import RequestException
 from ..csr import CsrPolicy
@@ -9,8 +8,7 @@ from ..config import strtobool, Param
 from .interfaces import IBackend
 
 
-@implementer(IBackend)
-class VaultBackend:
+class VaultBackend(IBackend):
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"
     threadsafe = False

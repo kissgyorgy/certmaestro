@@ -5,7 +5,6 @@ from configparser import MissingSectionHeaderError
 from pathlib import Path
 from subprocess import run, PIPE
 from typing import Iterator
-from zope.interface import implementer
 from ...wrapper import Cert, PrivateKey, Crl, SerialNumber
 from ...config import Param
 from ...exceptions import BackendError
@@ -14,10 +13,10 @@ from ..interfaces import IBackend
 from .parser import OpenSSLConfigParser
 
 
-@implementer(IBackend)
-class OpenSSLBackend:
+class OpenSSLBackend(IBackend):
     name = 'OpenSSL'
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
+    threadsafe = False
 
     init_requires = (
         Param('openssl_binary', help='Path to the openssl binary', convert=Path),

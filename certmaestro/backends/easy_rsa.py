@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Iterator
 from subprocess import run, PIPE, DEVNULL
-from zope.interface import implementer
 from ..wrapper import PrivateKey, Cert, RevokedCert, SerialNumber, Crl
 from ..config import Param
 from ..exceptions import BackendError
@@ -12,8 +11,7 @@ from .openssl import OpenSSLBackend
 from .openssl.parser import OpenSSLDbParser
 
 
-@implementer(IBackend)
-class EasyRSA2Backend:
+class EasyRSA2Backend(IBackend):
     name = 'Easy-RSA 2.X'
     description = "OpenVPN's simple shell-based CA utility: https://github.com/OpenVPN/easy-rsa"
     threadsafe = False

@@ -6,7 +6,6 @@ install_requires = [
     'oscrypto',
     'certifi',
     'hvac[parser]',
-    'zope.interface',
     'tabulate',
     'attrs',
     'Jinja2',

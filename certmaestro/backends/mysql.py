@@ -1,9 +1,7 @@
-from zope.interface import implementer
 from .interfaces import IBackend
 
 
-@implementer(IBackend)
-class MySQLBackend:
+class MySQLBackend(IBackend):
     name = 'MySQL'
     description = 'Storing certificates in a MySQL database'
     threadsafe = True
