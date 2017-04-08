@@ -1,7 +1,9 @@
 import ssl
+import enum
 import socket
 import certifi
 from concurrent import futures
+import attr
 from oscrypto.errors import TLSError
 from oscrypto.tls import TLSSocket
 from .url import parse_url
@@ -103,13 +105,13 @@ class CheckSiteManager:
         return skipped_urls
 
     def _skip(self, url, reason):
-        skipresult = CheckSiteResult(url, CheckSiteResult.SKIPPED, reason)
+        skipresult = CheckedSite(url, CheckResult.SKIPPED, reason)
         self.skipped.append(skipresult)
 
     def _make_result(self, future):
         hostname, error_message = future.result()
-        status = CheckSiteResult.FAILED if error_message else CheckSiteResult.SUCCEEDED
-        return CheckSiteResult(hostname, status, error_message)
+        result = CheckResult.FAILED if error_message else CheckResult.SUCCEEDED
+        return CheckedSite(hostname, result, error_message)
 
     def _check(self, hostname):
         # OpenSSL is more strict about misconfigured servers,
@@ -127,15 +129,22 @@ class CheckSiteManager:
             return hostname, None
 
 
-class CheckSiteResult:
+class CheckResult(enum.Enum):
     SUCCEEDED = 'SUCCEEDED'
     SKIPPED = 'SKIPPED'
     FAILED = 'FAILED'
 
-    def __init__(self, url, status, message=None):
-        self.url = url
-        self.status = status
-        self.message = message
-        self.succeeded = status == self.SUCCEEDED
-        self.skipped = status == self.SKIPPED
-        self.failed = status == self.FAILED
+
+@attr.s(slots=True, cmp=False)
+class CheckedSite:
+    url = attr.ib()
+    result = attr.ib(convert=CheckResult)
+    message = attr.ib(default=None)
+    succeeded = attr.ib(init=False)
+    skipped = attr.ib(init=False)
+    failed = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        self.succeeded = (self.result == CheckResult.SUCCEEDED)
+        self.skipped = (self.result == CheckResult.SKIPPED)
+        self.failed = (self.result == CheckResult.FAILED)

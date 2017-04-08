@@ -55,13 +55,13 @@ def check(ctx, urls, timeout, retries, redirect):
 
     click.echo('Checking certificates...')
     manager = CheckSiteManager(urls, redirect, timeout, retries)
-    for check_result in manager.check_sites():
-        if check_result.succeeded:
-            click.secho(f'Valid:     {check_result.url}', fg='green')
-        elif check_result.skipped:
-            click.echo(f'Skipped:   {check_result.url} ({check_result.message})')
-        elif check_result.failed:
-            click.secho(f'Failed:    {check_result.url} ({check_result.message})', fg='red')
+    for checked_site in manager.check_sites():
+        if checked_site.succeeded:
+            click.secho(f'Valid:     {checked_site.url}', fg='green')
+        elif checked_site.skipped:
+            click.echo(f'Skipped:   {checked_site.url} ({checked_site.message})')
+        elif checked_site.failed:
+            click.secho(f'Failed:    {checked_site.url} ({checked_site.message})', fg='red')
 
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
     success_message = click.style(f'success: {manager.success_count}', fg='green')
