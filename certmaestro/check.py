@@ -24,6 +24,8 @@ def openssl_check_hostname(hostname):
         return parse_socket_error_message(e.args[1])
     except ssl.CertificateError as e:
         return str(e)
+    else:
+        return None
 
 
 def parse_socket_error_message(message):
@@ -48,6 +50,8 @@ def oscrypto_check_hostname(hostname):
         return (str(e))
     except socket.timeout as e:
         return 'Timed out'
+    else:
+        return None
 
 
 class CheckSiteManager:
@@ -61,9 +65,10 @@ class CheckSiteManager:
         self.failed = []
 
     def check_sites(self):
+        skipped_urls = self._skip_urls()
+        hostnames = {parse_url(url).host for url in self.urls if url not in skipped_urls}
+
         with futures.ThreadPoolExecutor(max_workers=3) as executor:
-            skipped_urls = self._skip_urls()
-            hostnames = {parse_url(url).host for url in self.urls if url not in skipped_urls}
             futures_to_urls = {executor.submit(self._check, hostname) for hostname in hostnames}
             # we start yielding after starting requests, so the perceived speed might be better
             # if the client does something with the return values
@@ -114,19 +119,17 @@ class CheckSiteManager:
         return CheckedSite(hostname, result, error_message)
 
     def _check(self, hostname):
-        # OpenSSL is more strict about misconfigured servers,
-        # e.g. it recognizes missing chains
+        # OpenSSL is more strict about misconfigured servers, e.g. it recognizes missing chains
         openssl_error = openssl_check_hostname(hostname)
+        if not openssl_error:
+            return hostname, None
         # Timeout is the same for both, don't do it twice unnecessary
-        if openssl_error and openssl_error != 'Timed out':
+        elif openssl_error == 'Timed out':
+            return hostname, openssl_error
+        else:
             # OSCrypto gives better error messages, but is more allowing
             oscrypto_error = oscrypto_check_hostname(hostname)
-            error_message = openssl_error if not oscrypto_error else openssl_error
-            return hostname, error_message
-        elif openssl_error:
-            return hostname, error_message
-        else:
-            return hostname, None
+            return oscrypto_error or openssl_error
 
 
 class CheckResult(enum.Enum):
