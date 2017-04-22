@@ -7,7 +7,7 @@ from ..config import Param
 from ..exceptions import BackendError
 from ..csr import CsrBuilder
 from .interfaces import IBackend
-from .openssl import OpenSSLBackend, OpenSSLDbParser
+from .openssl import OpenSSLBackend
 
 
 class EasyRSA2Backend(IBackend):

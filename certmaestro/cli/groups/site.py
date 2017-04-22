@@ -71,10 +71,8 @@ def check(ctx, urls, timeout, retries, redirect):
     click.echo(f'{total_message}, {success_message}, skipped: {manager.skip_count}, {failed_message}')
 
     if manager.fail_count > 0:
-        exitcode = 2
+         ctx.exit(2)
     elif manager.skip_count > 0:
-        exitcode = 1
+         ctx.exit(1)
     else:
-        exitcode = 0
-
-    ctx.exit(exitcode)
+         ctx.exit(0)

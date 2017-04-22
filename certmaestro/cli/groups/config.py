@@ -51,9 +51,9 @@ def config():
 @click.pass_context
 def setup(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
-    all_backends = load_all_backends()
     config_path = get_config_path(ctx)
     _check_config_path(config_path)
+    all_backends = load_all_backends()
     BackendCls = _select_backend(all_backends)
     builder = _ask_backend_params(BackendCls)
     backend = builder.setup_backend()

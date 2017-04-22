@@ -117,7 +117,7 @@ class OpenSSLBackend(IBackend):
         if policy == 'supplied':
             return CsrPolicy.REQUIRED
         elif policy == 'match':
-            return CsrPolicy. FROMCA
+            return CsrPolicy.FROMCA
         elif policy == 'optional':
             return CsrPolicy.OPTIONAL
 

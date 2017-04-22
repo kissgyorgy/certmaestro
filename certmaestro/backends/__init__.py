@@ -22,8 +22,9 @@ _BACKEND_NAME_CLASS_MAP = {
 
 def load_all_backends():
     """This function eagerly loads all backends.
-    It will needed at setup, to be able to offer all backends the user can choose from. After
-    setup, only the relevant backend will be imported, mostly to avoid unnecessary dependencies.
+    It will be needed at setup, to be able to offer all backends the user can choose from. After
+    setup, only the relevant backend will be imported, mostly to avoid unnecessary dependencies
+    and faster startup time.
     """
     from .vault import VaultBackend
     from .openssl import OpenSSLBackend
@@ -78,20 +79,16 @@ class BackendBuilder:
             yield Param(**values)
 
     def validate(self):
-        self._check_missing()
-        backend = self._validate_init()
-        backend.validate_setup(**self.setup_params)
-
-    def _check_missing(self):
         for param in self:
             if param.default is None:
                 raise ValueError(f'Parameter "{param.name}" is needed')
 
-    def _validate_init(self):
         try:
             return self._backend_class(**self.init_params)
         except BackendError as e:
             raise ValueError(str(e))
+
+        backend.validate_setup(**self.setup_params)
 
     def is_valid(self):
         try:

@@ -21,8 +21,7 @@ class SerialNumber:
         serial = serial.lower()
         if serial.startswith('0x'):
             serial = serial[2:]
-        if ':' in serial:
-            serial = self._decolonize(serial)
+        serial = serial.replace(':', '')
         serial = self._zero_prefix(serial)
         serial = self.colonize(serial)
         self._value = serial
@@ -43,7 +42,7 @@ class SerialNumber:
         return self._value == other._value
 
     def as_hex(self, prefix=False):
-        serial_hex = self._decolonize(self._value)
+        serial_hex = self._value.replace(':', '')
         return '0x' + serial_hex if prefix else serial_hex
 
     @staticmethod
@@ -55,9 +54,6 @@ class SerialNumber:
     @staticmethod
     def colonize(serial: SerialHex):
         return ':'.join(serial[i:i+2] for i in range(0, len(serial), 2))
-
-    def _decolonize(self, serial: str):
-        return serial.replace(':', '')
 
 
 class Name:
@@ -261,7 +257,7 @@ class Crl(FromFileMixin):
     def __init__(self, crl_pem: str):
         type_name, headers, der_bytes = asn1pem.unarmor(crl_pem.encode())
         if type_name != 'X509 CRL':
-            raise ValueError('This not seem like a Certificate Revocation List.')
+            raise ValueError('This does not seem like a Certificate Revocation List.')
 
         self._crl = asn1crl.CertificateList.load(der_bytes)
 
