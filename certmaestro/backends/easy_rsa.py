@@ -93,12 +93,9 @@ class EasyRSA2Backend(IBackend):
                 return rc
 
     def get_cert_list(self) -> Iterator[Cert]:
-        dhparam_name = f"dh{self._env['KEY_SIZE']}.pem"
-        for cert_path in Path(self._env['KEY_DIR']).glob('*.pem'):
-            # skip dhparam and crl.pem
-            if cert_path.name in (dhparam_name, 'crl.pem'):
-                continue
-            yield Cert.from_file(cert_path)
+        for entry in self._db:
+            filename = entry.serial_number.as_hex() + '.pem'
+            yield Cert.from_file(self._key_dir / filename)
 
     def get_cert(self, serial: str) -> Cert:
         serial_hex = SerialNumber(serial).as_hex()

@@ -66,6 +66,11 @@ class OpenSSLBackend(IBackend):
                 f.seek(0)
                 self._cnf.read_string('[dummy]' + f.read())
 
+        db_path = Path(root_dir / self._ca_section['database'])
+        if not db_path.exists():
+            raise BackendError(f'OpenSSL database file ({db_path}) is missing.')
+        self._db = OpenSSLDbParser(db_path)
+
     @staticmethod
     def _check_file(openssl_binary):
         return openssl_binary.is_file() and os.access(openssl_binary, os.F_OK)
@@ -169,8 +174,9 @@ class OpenSSLBackend(IBackend):
         return Cert.from_file(cert_path)
 
     def get_cert_list(self) -> Iterator[Cert]:
-        for cert_path in self._new_certs_dir.iterdir():
-            yield Cert.from_file(cert_path)
+        for entry in self._db:
+            filename = entry.serial_number.as_hex() + '.pem'
+            yield Cert.from_file(self._new_certs_dir / filename)
 
     def get_crl(self):
         return Crl.from_file(self._crl_file)
