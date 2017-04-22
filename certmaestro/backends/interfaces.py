@@ -45,13 +45,13 @@ class IBackend(metaclass=ABCMeta):
     def issue_cert(self, common_name) -> (PrivateKey, Cert):
         """Issue a new cert for a Common Name."""
 
-    def revoke_cert(self, serial_str) -> RevokedCert:
+    def revoke_cert(self, serial: str) -> RevokedCert:
         """Revoke certificate by serial number."""
 
     def get_cert_list(self) -> Iterator[Cert]:
         """Get the list of all the issued certificates."""
 
-    def get_cert(self, serial_str) -> Cert:
+    def get_cert(self, serial: str) -> Cert:
         """Get certificate."""
 
     def get_crl(self) -> Crl:

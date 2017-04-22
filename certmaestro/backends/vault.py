@@ -108,17 +108,17 @@ class VaultBackend(IBackend):
                                  common_name=csr['common_name'])
         return PrivateKey(res['data']['private_key']), Cert(res['data']['certificate'])
 
-    def revoke_cert(self, serial_str):
+    def revoke_cert(self, serial: str):
         return self._client.write(f'{self.mount_point}/revoke',
-                                  serial_number=str(SerialNumber(serial_str)))
+                                  serial_number=str(SerialNumber(serial)))
 
     def get_cert_list(self) -> Iterator[Cert]:
         res = self._client.list(f'{self.mount_point}/certs')
-        for serial_str in res['data']['keys']:
-            yield self.get_cert(serial_str)
+        for serial in res['data']['keys']:
+            yield self.get_cert(serial)
 
-    def get_cert(self, serial_str: str) -> Cert:
-        serial_number = SerialNumber(serial_str)
+    def get_cert(self, serial: str) -> Cert:
+        serial_number = SerialNumber(serial)
         res = self._client.read(f'{self.mount_point}/cert/{serial_number}')
         return Cert(res['data']['certificate'])
 

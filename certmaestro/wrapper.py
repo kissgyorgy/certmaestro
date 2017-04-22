@@ -3,6 +3,7 @@
 """
 import re
 from pathlib import Path
+from typing import NewType
 from oscrypto.keys import parse_certificate
 import asn1crypto.x509 as asn1x509
 import asn1crypto.keys as asn1keys
@@ -10,22 +11,25 @@ import asn1crypto.pem as asn1pem
 import asn1crypto.crl as asn1crl
 
 
+SerialHex = NewType('SerialHex', str)
+
+
 class SerialNumber:
 
-    def __init__(self, serial_str: str):
+    def __init__(self, serial: str):
         # might have 0x prefix, and/or colons
-        serial_str = serial_str.lower()
-        if serial_str.startswith('0x'):
-            serial_str = serial_str[2:]
-        if ':' in serial_str:
-            serial_str = self._decolonize(serial_str)
-        serial_str = self._zero_prefix(serial_str)
-        serial_str = self.colonize(serial_str)
-        self._value = serial_str
+        serial = serial.lower()
+        if serial.startswith('0x'):
+            serial = serial[2:]
+        if ':' in serial:
+            serial = self._decolonize(serial)
+        serial = self._zero_prefix(serial)
+        serial = self.colonize(serial)
+        self._value = serial
 
     @classmethod
-    def from_int(cls, serial_int: int):
-        return cls(hex(serial_int))
+    def from_int(cls, serial: int):
+        return cls(hex(serial))
 
     def __str__(self):
         return self._value
@@ -43,17 +47,17 @@ class SerialNumber:
         return '0x' + serial_hex if prefix else serial_hex
 
     @staticmethod
-    def _zero_prefix(serial_hex):
-        if len(serial_hex) % 2 == 1:
-            serial_hex = '0' + serial_hex
-        return serial_hex
+    def _zero_prefix(serial: SerialHex):
+        if len(serial) % 2 == 1:
+            serial = '0' + serial
+        return serial
 
     @staticmethod
-    def colonize(serial_hex: str):
-        return ':'.join(serial_hex[i:i+2] for i in range(0, len(serial_hex), 2))
+    def colonize(serial: SerialHex):
+        return ':'.join(serial[i:i+2] for i in range(0, len(serial), 2))
 
-    def _decolonize(self, serial_str):
-        return serial_str.replace(':', '')
+    def _decolonize(self, serial: str):
+        return serial.replace(':', '')
 
 
 class Name:
@@ -68,8 +72,8 @@ class Name:
     }
     _name_re = re.compile(r'/([A-Z]+)=([^/]*)')
 
-    def __init__(self, name_str: str):
-        raw_values = dict(self._name_re.findall(name_str))
+    def __init__(self, name: str):
+        raw_values = dict(self._name_re.findall(name))
         values = {self._map[k]: v for k, v in raw_values.items()}
         self._name = asn1x509.Name.build(values)
 

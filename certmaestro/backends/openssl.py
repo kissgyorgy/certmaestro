@@ -163,8 +163,8 @@ class OpenSSLBackend(IBackend):
         path = self._certs_dir / filename
         path.write_text(pem_data)
 
-    def get_cert(self, serial_str: str) -> Cert:
-        serial_hex = SerialNumber(serial_str).as_hex()
+    def get_cert(self, serial: str) -> Cert:
+        serial_hex = SerialNumber(serial).as_hex()
         cert_path = self._new_certs_dir / f'{serial_hex}.pem'
         return Cert.from_file(cert_path)
 
