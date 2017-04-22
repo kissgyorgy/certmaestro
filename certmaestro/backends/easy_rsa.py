@@ -85,7 +85,7 @@ class EasyRSA2Backend(IBackend):
         return PrivateKey.from_file(key_path), Cert.from_file(cert_path)
 
     def revoke_cert(self, serial_str: str) -> RevokedCert:
-        entry = self._db.get_by_serial_number(serial_str)
+        entry = self._db.get_by_serial(serial_str)
         # TODO: check for CalledProcessError and raise RevocationError()
         self._run('revoke-full', entry.name.common_name)
         for rc in Crl.from_file(self._key_dir / 'crl.pem'):

@@ -225,9 +225,9 @@ class OpenSSLDbEntry:
     status = attr.ib()
     expiration = attr.ib()
     revocation = attr.ib()
-    serial_number = attr.ib()
+    serial_number = attr.ib(convert=SerialNumber)
     filename = attr.ib()
-    name = attr.ib()
+    name = attr.ib(convert=Name)
 
 
 class OpenSSLDbParser(FromFileMixin):
@@ -270,12 +270,9 @@ class OpenSSLDbParser(FromFileMixin):
     def _iter_file(self):
         for line in iter(self._mm.readline, b''):
             columns = line.rstrip().decode().split('\t')
-            status, expiration, revocation, serial_str, filename, name_str = columns
-            serial_number = SerialNumber(serial_str)
-            name = Name(name_str)
-            yield OpenSSLDbEntry(status, expiration, revocation, serial_number, filename, name)
+            yield OpenSSLDbEntry(*columns)
 
-    def get_by_serial_number(self, serial_str: str):
+    def get_by_serial(self, serial: str):
         for entry in self:
-            if entry.serial_number == SerialNumber(serial_str):
+            if entry.serial_number == SerialNumber(serial):
                 return entry
