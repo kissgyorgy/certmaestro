@@ -1,25 +1,47 @@
 from typing import Mapping
+from importlib import import_module
 import attr
 from ..exceptions import BackendError
-from .mysql import MySQLBackend
-from .openssl import OpenSSLBackend
-from .postgres import PostgresBackend
-from .vault import VaultBackend
-from .easy_rsa import EasyRSA2Backend
 from ..config import Param
 
 
-BACKENDS = [
-    VaultBackend,
-    OpenSSLBackend,
-    EasyRSA2Backend,
-    PostgresBackend,
-    MySQLBackend,
-]
+# we only want to store human readable section names in certmaestro.ini, so we need to pair
+# those names to actual Python classes, otherwise we would need to store those in the .ini
+# name: (module, BackendClass)
+_BACKEND_NAME_CLASS_MAP = {
+    'Vault': ('.vault', 'VaultBackend'),
+    'OpenSSL': ('.openssl', 'OpenSSLBackend'),
+    'Easy-RSA 2.X': ('.easy_rsa', 'EasyRSA2Backend'),
+    'PostgreSQL': ('.postgres', 'PostgreSQLBackend'),
+    'MySQL': ('.mysql', 'MySQLBackend'),
+    # Not sure if this should be user visible, because it's an implementation detail.
+    # It will be explicitly imported if necessary.
+    # 'Twisted Vault': ('.vault', 'TwistedVaultBackend'),
+}
 
 
+def load_all_backends():
+    """This function eagerly loads all backends.
+    It will needed at setup, to be able to offer all backends the user can choose from. After
+    setup, only the relevant backend will be imported, mostly to avoid unnecessary dependencies.
+    """
+    from .vault import VaultBackend
+    from .openssl import OpenSSLBackend
+    from .easy_rsa import EasyRSA2Backend
+    from .postgres import PostgreSQLBackend
+    from .mysql import MySQLBackend
+    return [VaultBackend, OpenSSLBackend, EasyRSA2Backend, PostgreSQLBackend, MySQLBackend]
+
+
+def _load_backend(backend_name):
+    module_name, cls_name = _BACKEND_NAME_CLASS_MAP[backend_name]
+    module = import_module(module_name, package='certmaestro.backends')
+    return getattr(module, cls_name)
+
+
+# This function is not needed at setup at all. It's either load_all_backends or get_backend.
 def get_backend(config):
-    BackendCls = next(b for b in BACKENDS if b.name == config.backend_name)
+    BackendCls = _load_backend(config.backend_name)
     init_param_names = set(p.name for p in BackendCls.init_requires)
     extra_parameters = set(config.backend_config) - init_param_names
     if extra_parameters:

@@ -1,5 +1,5 @@
 import click
-from certmaestro.backends import BACKENDS, BackendBuilder, get_backend
+from certmaestro.backends import BackendBuilder, get_backend, load_all_backends
 from certmaestro.exceptions import BackendError
 from certmaestro import Config
 from ..utils import get_config_path
@@ -52,9 +52,10 @@ def config():
 @click.pass_context
 def setup(ctx):
     """Initializes backend storage, settings roles, and generate CA."""
+    all_backends = load_all_backends()
     config_path = get_config_path(ctx)
     _check_config_path(config_path)
-    BackendCls = _select_backend()
+    BackendCls = _select_backend(all_backends)
     builder = _ask_backend_params(BackendCls)
     backend = builder.setup_backend()
     _make_new_config(builder, config_path)
@@ -70,15 +71,15 @@ def _check_config_path(config_path):
         click.echo()
 
 
-def _select_backend():
+def _select_backend(all_backends):
     click.echo('Backend choices:')
-    for choice, Backend in enumerate(BACKENDS):
+    for choice, Backend in enumerate(all_backends):
         click.echo(f'{choice + 1}. {Backend.name} - {Backend.description}')
 
-    backend_choice = click.prompt(f'Which backend do you want to set up (1-{len(BACKENDS)})?',
+    backend_choice = click.prompt(f'Which backend do you want to set up (1-{len(all_backends)})?',
                                   default=1)
     click.echo()
-    BackendCls = BACKENDS[backend_choice - 1]
+    BackendCls = all_backends[backend_choice - 1]
     return BackendCls
 
 
