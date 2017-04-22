@@ -199,12 +199,15 @@ class OpenSSLInterpolation(Interpolation):
         m = self._KEYCRE.match(value[dollar_ind:])
         if m is None:
             raise InterpolationSyntaxError(option, section,
-                                           "bad interpolation variable reference {value}")
+                                           f'bad interpolation variable reference {value}')
         var = parser.optionxform(m.group(1))
         try:
             val = defaults[var]
         except KeyError:
             raise InterpolationMissingOptionError(option, section, value, var) from None
+
+        # the resolved value can also contain variables
+        val = self.before_get(parser, section, option, val, defaults)
 
         return val + value[m.end():]
 
