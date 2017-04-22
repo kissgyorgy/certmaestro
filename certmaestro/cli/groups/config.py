@@ -113,3 +113,8 @@ def _make_new_config(builder, config_path):
 @ensure_config
 def show(obj):
     """Show saved configuration options."""
+
+
+@config.command()
+def switch():
+    """Switch to an already configured backend and use that from now on."""
