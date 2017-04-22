@@ -99,8 +99,8 @@ class OpenSSLBackend(IBackend):
 
     def _openssl(self, main_command, *params, input=None):
         command = [self._openssl_binary, main_command, '-config', self._config_path, *params]
-        result = run(command, stdout=PIPE, stderr=PIPE, input=input, check=True,
-                     universal_newlines=True)
+        result = run(command, cwd=self._root_dir, stdout=PIPE, stderr=PIPE, input=input,
+                     check=True, universal_newlines=True)
         return result.stdout
 
     def get_ca_cert(self) -> Cert:
