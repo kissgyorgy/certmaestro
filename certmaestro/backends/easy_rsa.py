@@ -33,7 +33,6 @@ class EasyRSA2Backend(IBackend):
         self._vars_file = vars_file
         self._env = self._get_full_env()
         self._openssl_backend = self._make_openssl_backend()
-        self._db = OpenSSLDbParser(self._key_dir / 'index.txt')
 
     def _get_full_env(self):
         varnames = ('EASY_RSA', 'OPENSSL', 'PKCS11TOOL', 'GREP', 'KEY_CONFIG', 'KEY_DIR',
@@ -70,7 +69,7 @@ class EasyRSA2Backend(IBackend):
         return result.stdout
 
     def get_ca_cert(self) -> Cert:
-        return Cert.from_file(self._key_dir / 'ca.crt')
+        return self._openssl_backend.get_ca_cert()
 
     def get_csr_policy(self):
         return self._openssl_backend.get_csr_policy()
@@ -85,7 +84,7 @@ class EasyRSA2Backend(IBackend):
         return PrivateKey.from_file(key_path), Cert.from_file(cert_path)
 
     def revoke_cert(self, serial: str) -> RevokedCert:
-        entry = self._db.get_by_serial(serial)
+        entry = self._openssl_backend._db.get_by_serial(serial)
         # TODO: check for CalledProcessError and raise RevocationError()
         self._run('revoke-full', entry.name.common_name)
         for rc in Crl.from_file(self._key_dir / 'crl.pem'):
@@ -93,14 +92,10 @@ class EasyRSA2Backend(IBackend):
                 return rc
 
     def get_cert_list(self) -> Iterator[Cert]:
-        for entry in self._db:
-            filename = entry.serial_number.as_hex() + '.pem'
-            yield Cert.from_file(self._key_dir / filename)
+        yield from self._openssl_backend.get_cert_list()
 
     def get_cert(self, serial: str) -> Cert:
-        serial_hex = SerialNumber(serial).as_hex()
-        cert_path = self._key_dir / f'{serial_hex}.pem'
-        return Cert.from_file(cert_path)
+        return self._openssl_backend.get_cert(serial)
 
     @property
     def version(self) -> str:
