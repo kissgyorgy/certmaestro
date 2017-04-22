@@ -1,9 +1,5 @@
-import ssl
 import click
-import pkg_resources
 from certmaestro import Config
-from certmaestro.backends import get_backend
-from ..utils import get_config_path
 
 
 @click.group(invoke_without_command=True)
@@ -29,6 +25,10 @@ def main(ctx, config_path, show_version):
 @click.pass_context
 def version(ctx):
     """Same as --version."""
+    import pkg_resources
+    from certmaestro.backends import get_backend
+    from ..utils import get_config_path
+
     certmaestro_version = pkg_resources.get_distribution('certmaestro').version
     click.echo('Certmaestro ' + certmaestro_version)
     try:

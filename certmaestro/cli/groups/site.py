@@ -1,8 +1,4 @@
-import ssl
 import click
-from certmaestro.wrapper import Cert
-from certmaestro.check import CheckSiteManager, parse_socket_error_message
-from ..formatter import env
 from . import main
 
 
@@ -20,6 +16,11 @@ def show_cert(ctx, hostname, port):
     \b
     You can optionally give a port number which is 443 by default.
     """
+    import ssl
+    from certmaestro.wrapper import Cert
+    from certmaestro.check import parse_socket_error_message
+    from ..formatter import env
+
     try:
         cert_pem = ssl.get_server_certificate((hostname, port))
     except ssl.SSLError as e:
@@ -50,6 +51,8 @@ def check(ctx, urls, timeout, retries, redirect):
         - 1 if there was an unknown protocol (not https://)
         - 2 if at least one failed
     """
+    from certmaestro.check import CheckSiteManager
+
     if not urls:
         raise click.UsageError('You need to provide at least one site to check!')
 

@@ -1,5 +1,4 @@
 import click
-from tabulate import tabulate
 from .config import ensure_config
 from . import main
 
@@ -19,6 +18,8 @@ def update(obj):
 @ensure_config
 def show(obj):
     """Show the Certificate Revocation List."""
+    from tabulate import tabulate
+
     crl = obj.backend.get_crl()
     click.echo(f'Issuer Common Name:    {crl.issuer.common_name}')
     click.echo(f'This update:           {crl.this_update}')

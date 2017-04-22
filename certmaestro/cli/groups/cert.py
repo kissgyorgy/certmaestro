@@ -1,8 +1,4 @@
 import click
-from tabulate import tabulate
-from certmaestro.csr import CsrPolicy, CsrBuilder
-from certmaestro.config import CERT_FIELDS
-from ..formatter import env
 from .config import ensure_config
 from . import main
 
@@ -16,6 +12,9 @@ def cert():
 @ensure_config
 def issue(obj):
     """Issue a new certificate."""
+    from certmaestro.csr import CsrPolicy, CsrBuilder
+    from certmaestro.config import CERT_FIELDS
+
     policy = obj.backend.get_csr_policy()
     defaults = obj.backend.get_csr_defaults()
     csr = CsrBuilder(policy, defaults)
@@ -30,6 +29,8 @@ def issue(obj):
 @ensure_config
 def show(obj, serial_number):
     """Show certificate details."""
+    from ..formatter import env
+
     template = env.get_template('certmaestro_format.jinja2')
     cert = obj.backend.get_cert(serial_number.lower())
     click.echo(template.render(cert=cert))
@@ -39,6 +40,8 @@ def show(obj, serial_number):
 @ensure_config
 def show_ca(obj):
     """Show CA certificate details."""
+    from ..formatter import env
+
     cert = obj.backend.get_ca_cert()
     template = env.get_template('certmaestro_format.jinja2')
     click.echo(template.render(cert=cert))
@@ -48,6 +51,8 @@ def show_ca(obj):
 @ensure_config
 def list_certs(obj):
     """List issued certificates."""
+    from tabulate import tabulate
+
     cert_list = obj.backend.get_cert_list()
     cert_table = ((c.subject.common_name, c.not_valid_before, c.not_valid_after, c.serial_number)
                   for c in cert_list)
