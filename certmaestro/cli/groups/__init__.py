@@ -1,5 +1,9 @@
 import click
 from certmaestro import Config
+from .config import config
+from .cert import cert
+from .crl import crl
+from .site import site
 
 
 @click.group(invoke_without_command=True)
@@ -40,8 +44,7 @@ def version(ctx):
         click.echo('Backend: ' + backend.version)
 
 
-# import for the side effect
-from . import config
-from . import cert
-from . import crl
-from . import site
+main.add_command(config)
+main.add_command(cert)
+main.add_command(crl)
+main.add_command(site)

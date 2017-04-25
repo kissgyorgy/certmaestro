@@ -1,9 +1,8 @@
 import click
 from .config import ensure_config
-from . import main
 
 
-@main.group()
+@click.group()
 def cert():
     """Issue, sign, revoke and view certificates."""
 

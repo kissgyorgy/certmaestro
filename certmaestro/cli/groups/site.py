@@ -1,8 +1,7 @@
 import click
-from . import main
 
 
-@main.group()
+@click.group()
 def site():
     """Live website certificate checks."""
 

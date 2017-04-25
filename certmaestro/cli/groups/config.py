@@ -3,7 +3,6 @@ from certmaestro.backends import BackendBuilder, get_backend, load_all_backends
 from certmaestro.exceptions import BackendError
 from certmaestro import Config
 from ..utils import get_config_path
-from . import main
 
 
 class Obj:
@@ -43,7 +42,7 @@ class Obj:
 ensure_config = click.make_pass_decorator(Obj, ensure=True)
 
 
-@main.group()
+@click.group()
 def config():
     """Manage Certmaestro configuration."""
 
