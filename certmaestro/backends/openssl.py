@@ -239,7 +239,7 @@ class OpenSSLDbEntry:
     name = attr.ib(convert=Name)
 
 
-class OpenSSLDbParser(FromFileMixin):
+class OpenSSLDbParser:
     """Parses OpenSSL's index.txt certificate database.
     Every line in the file contains information about certificates. The format is the following:
     1. Status flag (V=valid, R=revoked, E=expired).
