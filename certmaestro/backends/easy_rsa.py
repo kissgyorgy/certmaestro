@@ -91,8 +91,8 @@ class EasyRSA2Backend(IBackend):
             if rc.serial_number == SerialNumber(serial):
                 return rc
 
-    def get_cert_list(self) -> Iterator[Cert]:
-        yield from self._openssl_backend.get_cert_list()
+    def list_certs(self) -> Iterator[Cert]:
+        yield from self._openssl_backend.list_certs()
 
     def get_cert(self, serial: str) -> Cert:
         return self._openssl_backend.get_cert(serial)

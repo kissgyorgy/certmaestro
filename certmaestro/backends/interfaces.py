@@ -48,7 +48,7 @@ class IBackend(metaclass=ABCMeta):
     def revoke_cert(self, serial: str) -> RevokedCert:
         """Revoke certificate by serial number."""
 
-    def get_cert_list(self) -> Iterator[Cert]:
+    def list_certs(self) -> Iterator[Cert]:
         """Get the list of all the issued certificates."""
 
     def get_cert(self, serial: str) -> Cert:

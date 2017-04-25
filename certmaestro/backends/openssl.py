@@ -173,7 +173,7 @@ class OpenSSLBackend(IBackend):
         cert_path = self._new_certs_dir / f'{serial_hex}.pem'
         return Cert.from_file(cert_path)
 
-    def get_cert_list(self) -> Iterator[Cert]:
+    def list_certs(self) -> Iterator[Cert]:
         for entry in self._db:
             filename = entry.serial_number.as_hex() + '.pem'
             yield Cert.from_file(self._new_certs_dir / filename)

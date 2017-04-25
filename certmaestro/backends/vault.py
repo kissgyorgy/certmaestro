@@ -112,7 +112,7 @@ class VaultBackend(IBackend):
         return self._client.write(f'{self.mount_point}/revoke',
                                   serial_number=str(SerialNumber(serial)))
 
-    def get_cert_list(self) -> Iterator[Cert]:
+    def list_certs(self) -> Iterator[Cert]:
         res = self._client.list(f'{self.mount_point}/certs')
         for serial in res['data']['keys']:
             yield self.get_cert(serial)
