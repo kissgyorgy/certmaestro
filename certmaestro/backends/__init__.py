@@ -9,22 +9,15 @@ from ..config import Param
 # those names to actual Python classes, otherwise we would need to store those in the .ini
 # name: (module, BackendClass)
 _BACKEND_NAME_CLASS_MAP = {
-    # 'Vault': ('.vault', 'VaultBackend'),
+    'Vault': ('.vault', 'VaultBackend'),
     'OpenSSL': ('.openssl', 'OpenSSLBackend'),
-    # 'Easy-RSA 2.X': ('.easy_rsa', 'EasyRSA2Backend'),
-    # 'PostgreSQL': ('.postgres', 'PostgreSQLBackend'),
-    # 'MySQL': ('.mysql', 'MySQLBackend'),
+    'Easy-RSA 2.X': ('.easy_rsa', 'EasyRSA2Backend'),
+    'PostgreSQL': ('.postgres', 'PostgreSQLBackend'),
+    'MySQL': ('.mysql', 'MySQLBackend'),
     # Not sure if this should be user visible, because it's an implementation detail.
     # It will be explicitly imported if necessary.
     # 'Twisted Vault': ('.vault', 'TwistedVaultBackend'),
 }
-
-
-def register_backend(cls):
-    _BACKEND_NAME_CLASS_MAP[cls.name] = (cls.__module__, cls.__name__)
-    print('Registered', cls.name)
-    print('NAME MAP', _BACKEND_NAME_CLASS_MAP)
-    return cls
 
 
 def load_all_backends():

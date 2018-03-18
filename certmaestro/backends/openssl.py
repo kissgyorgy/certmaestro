@@ -14,10 +14,8 @@ from ..config import Param
 from ..exceptions import BackendError
 from ..csr import CsrPolicy, CsrBuilder
 from .interfaces import IBackend
-from . import register_backend
 
 
-@register_backend
 class OpenSSLBackend(IBackend):
     name = 'OpenSSL'
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
