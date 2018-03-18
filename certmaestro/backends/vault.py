@@ -6,8 +6,10 @@ from ..exceptions import BackendError
 from ..wrapper import Cert, PrivateKey, Crl, SerialNumber
 from ..config import strtobool, Param
 from .interfaces import IBackend
+from . import register_backend
 
 
+@register_backend
 class VaultBackend(IBackend):
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"

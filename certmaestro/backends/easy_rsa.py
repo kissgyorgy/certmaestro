@@ -8,8 +8,10 @@ from ..exceptions import BackendError
 from ..csr import CsrBuilder
 from .interfaces import IBackend
 from .openssl import OpenSSLBackend
+from . import register_backend
 
 
+@register_backend
 class EasyRSA2Backend(IBackend):
     name = 'Easy-RSA 2.X'
     description = "OpenVPN's simple shell-based CA utility: https://github.com/OpenVPN/easy-rsa"
