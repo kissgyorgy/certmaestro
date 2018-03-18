@@ -22,6 +22,7 @@ class SerialNumber:
         if serial.startswith('0x'):
             serial = serial[2:]
         serial = serial.replace(':', '')
+        serial = serial.replace('-', '')
         serial = self._zero_prefix(serial)
         serial = self.colonize(serial)
         self._value = serial
