@@ -30,7 +30,7 @@ def main(ctx, config_path, show_version):
 def version(ctx):
     """Same as --version."""
     import pkg_resources
-    from certmaestro.backends import get_backend
+    from certmaestro.backends import get_backend, BackendError
     from ..utils import get_config_path
 
     certmaestro_version = pkg_resources.get_distribution('certmaestro').version
@@ -39,9 +39,15 @@ def version(ctx):
         config = Config(get_config_path(ctx))
     except FileNotFoundError:
         click.echo('Backend is not configured or invalid config path')
-    else:
+        return
+
+    try:
         backend = get_backend(config)
-        click.echo('Backend: ' + backend.version)
+    except BackendError as e:
+        click.echo(f'Backend configuration is invalid: {e}')
+        return
+
+    click.echo('Backend: ' + backend.version)
 
 
 main.add_command(config)
