@@ -8,7 +8,7 @@ from ..config import strtobool, Param
 from .interfaces import IBackend
 
 
-class VaultBackend(IBackend):
+class Backend(IBackend):
     name = 'Vault'
     description = "Hashicorp's Vault: https://www.vaultproject.io"
     threadsafe = True
@@ -46,7 +46,7 @@ class VaultBackend(IBackend):
             raise BackendError('Invalid connection credentials!')
 
     def __str__(self):
-        return f'<VaultBackend: {self._url}>\n'
+        return f'<vault.Backend: {self._url}>\n'
 
     def _get_max_lease_ttl(self):
         tune_url = f'/sys/mounts/{self.mount_point}/tune'

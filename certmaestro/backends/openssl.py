@@ -16,7 +16,7 @@ from ..csr import CsrPolicy, CsrBuilder
 from .interfaces import IBackend
 
 
-class OpenSSLBackend(IBackend):
+class Backend(IBackend):
     name = 'OpenSSL'
     description = 'Command line tools with openssl.cnf, https://www.openssl.org'
     threadsafe = False

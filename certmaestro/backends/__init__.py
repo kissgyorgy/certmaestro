@@ -6,17 +6,13 @@ from ..config import Param
 
 
 # we only want to store human readable section names in certmaestro.ini, so we need to pair
-# those names to actual Python classes, otherwise we would need to store those in the .ini
-# name: (module, BackendClass)
-_BACKEND_NAME_CLASS_MAP = {
-    'Vault': ('.vault', 'VaultBackend'),
-    'OpenSSL': ('.openssl', 'OpenSSLBackend'),
-    'Easy-RSA 2.X': ('.easy_rsa', 'EasyRSA2Backend'),
-    'PostgreSQL': ('.postgres', 'PostgreSQLBackend'),
-    'MySQL': ('.mysql', 'MySQLBackend'),
-    # Not sure if this should be user visible, because it's an implementation detail.
-    # It will be explicitly imported if necessary.
-    # 'Twisted Vault': ('.vault', 'TwistedVaultBackend'),
+# those names to Python modules, otherwise we would need to store those in the .ini name:
+_BACKEND_NAME_MODULE_MAP = {
+    'Vault': '.vault',
+    'OpenSSL': '.openssl',
+    'Easy-RSA 2.X': '.easy_rsa',
+    'PostgreSQL': '.postgres',
+    'MySQL': '.mysql',
 }
 
 
@@ -26,21 +22,10 @@ def load_all_backends():
     setup, only the relevant backend will be imported, mostly to avoid unnecessary dependencies
     and faster startup time.
     """
-    from .vault import VaultBackend
-    from .openssl import OpenSSLBackend
-    from .easy_rsa import EasyRSA2Backend
-    from .postgres import PostgreSQLBackend
-    from .mysql import MySQLBackend
-    return [VaultBackend, OpenSSLBackend, EasyRSA2Backend, PostgreSQLBackend, MySQLBackend]
+    from . import vault, openssl, easy_rsa, postgres, mysql
+    return [vault.Backend, openssl.Backend, easy_rsa.Backend, postgres.Backend, mysql.Backend]
 
 
-def _load_backend(backend_name):
-    module_name, cls_name = _BACKEND_NAME_CLASS_MAP[backend_name]
-    module = import_module(module_name, package='certmaestro.backends')
-    return getattr(module, cls_name)
-
-
-# This function is not needed at setup at all. It's either load_all_backends or get_backend.
 def get_backend(config):
     BackendCls = _load_backend(config.backend_name)
     init_param_names = set(p.name for p in BackendCls.init_requires)
@@ -50,6 +35,12 @@ def get_backend(config):
         raise BackendError(f"Invalid parameters in certmaestro config: {paramlist}")
     params = make_params(BackendCls.init_requires, config.backend_config)
     return BackendCls(**params)
+
+
+def _load_backend(backend_name):
+    module_name = _BACKEND_NAME_MODULE_MAP[backend_name]
+    module = import_module(module_name, package='certmaestro.backends')
+    return module.Backend
 
 
 def make_params(params, values: Mapping) -> dict:
