@@ -129,7 +129,7 @@ class CheckSiteManager:
         else:
             # OSCrypto gives better error messages, but is more allowing
             oscrypto_error = oscrypto_check_hostname(hostname)
-            return oscrypto_error or openssl_error
+            return hostname, oscrypto_error or openssl_error
 
 
 class CheckResult(enum.Enum):
