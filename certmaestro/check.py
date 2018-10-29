@@ -56,13 +56,17 @@ def oscrypto_check_hostname(hostname):
 
 
 class CheckSiteManager:
-    def __init__(self, redirect, timeout, retries):
+    def __init__(self, redirect, timeout, retries, *, loop=None):
         self.redirect = redirect
         self.timeout = timeout
         self.retries = retries
         self.skipped = []
         self.succeeded = []
         self.failed = []
+
+        executor = futures.ThreadPoolExecutor(max_workers=10)
+        self.loop = loop or asyncio.get_event_loop()
+        self.loop.set_default_executor(executor)
 
     @property
     def success_count(self):
@@ -124,7 +128,7 @@ class CheckSiteManager:
             return CheckedSite(hostname, CheckResult.FAILED, openssl_error)
         else:
             # OSCrypto gives better error messages, but it is less strict
-            oscrypto_error = oscrypto_check_hostname(hostname)
+            oscrypto_error = await self.loop.run_in_executor(None, oscrypto_check_hostname, hostname)
             error_message = oscrypto_error or openssl_error
             return CheckedSite(hostname, CheckResult.FAILED, error_message)
 
