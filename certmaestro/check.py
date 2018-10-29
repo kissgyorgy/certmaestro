@@ -56,7 +56,7 @@ def oscrypto_check_hostname(hostname):
 
 
 class CheckSiteManager:
-    def __init__(self, redirect, timeout, retries, *, loop=None):
+    def __init__(self, redirect, timeout, retries, max_threads, *, loop=None):
         self.redirect = redirect
         self.timeout = timeout
         self.retries = retries
@@ -64,7 +64,7 @@ class CheckSiteManager:
         self.succeeded = []
         self.failed = []
 
-        executor = futures.ThreadPoolExecutor(max_workers=10)
+        executor = futures.ThreadPoolExecutor(max_workers=max_threads)
         self.loop = loop or asyncio.get_event_loop()
         self.loop.set_default_executor(executor)
 

@@ -36,10 +36,11 @@ def show_cert(ctx, hostname, port):
 @click.option('-t', '--timeout', default=3.0,
               help='HTTP request timeout in seconds for individual requests.')
 @click.option('-r', '--retries', default=3)
+@click.option('-m', '--max-threads', default=10, type=click.IntRange(0, 100))
 @click.option('-f', '--follow-redirects', 'redirect', is_flag=True,
               help='Follow redirects (disabled by default).')
 @click.pass_context
-def check(ctx, urls, timeout, retries, redirect):
+def check(ctx, urls, timeout, retries, max_threads, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
     This doesn't say anything about your whole webserver configuration, only check
@@ -59,7 +60,7 @@ def check(ctx, urls, timeout, retries, redirect):
     click.echo('Checking certificates...')
 
     loop = asyncio.get_event_loop()
-    manager = CheckSiteManager(redirect, timeout, retries, loop=loop)
+    manager = CheckSiteManager(redirect, timeout, retries, max_threads, loop=loop)
     loop.run_until_complete(_check_sites(manager, urls))
 
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
