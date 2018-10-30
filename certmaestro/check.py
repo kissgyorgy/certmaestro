@@ -16,7 +16,6 @@ async def check_hostname(hostname):
         # hostname is used for the server cert verification
         _, writer = await asyncio.open_connection(hostname, 443, ssl=ssl_context)
         writer.close()
-        await writer.wait_closed()
     except socket.timeout as e:
         return 'Timed out'
     except OSError as e:
