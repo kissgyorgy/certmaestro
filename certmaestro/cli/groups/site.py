@@ -59,8 +59,8 @@ def check(ctx, urls, timeout, retries, max_threads, redirect):
 
     click.echo('Checking certificates...')
 
+    manager = CheckSiteManager(redirect, timeout, retries, max_threads)
     loop = asyncio.get_event_loop()
-    manager = CheckSiteManager(redirect, timeout, retries, max_threads, loop=loop)
     loop.run_until_complete(_check_sites(manager, urls))
 
     total_message = click.style(f'Total: {len(urls)}', fg='blue')

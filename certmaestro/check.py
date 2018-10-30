@@ -3,14 +3,11 @@ import enum
 import socket
 import asyncio
 import certifi
-from concurrent import futures
 import attr
-from oscrypto.errors import TLSError
-from oscrypto.tls import TLSSocket
 from .url import parse_url
 
 
-async def openssl_check_hostname(hostname):
+async def check_hostname(hostname):
     ssl_context = ssl.create_default_context(cafile=certifi.where())
     try:
         # server_hostname is not needed, because by default,
@@ -39,34 +36,14 @@ def parse_socket_error_message(message):
     return message
 
 
-def oscrypto_check_hostname(hostname):
-    try:
-        # TODO: enable certificate verification with certifi (Mozilla CA bundle)
-        # to make results more consistent and reproducible
-        tls_socket = TLSSocket(hostname, 443)
-        tls_socket.shutdown()
-    except TLSError as e:
-        return e.message
-    except socket.gaierror as e:
-        return (str(e))
-    except socket.timeout as e:
-        return 'Timed out'
-    else:
-        return None
-
-
 class CheckSiteManager:
-    def __init__(self, redirect, timeout, retries, max_threads, *, loop=None):
+    def __init__(self, redirect, timeout, retries, max_threads):
         self.redirect = redirect
         self.timeout = timeout
         self.retries = retries
         self.skipped = []
         self.succeeded = []
         self.failed = []
-
-        executor = futures.ThreadPoolExecutor(max_workers=max_threads)
-        self.loop = loop or asyncio.get_event_loop()
-        self.loop.set_default_executor(executor)
 
     @property
     def success_count(self):
@@ -120,17 +97,9 @@ class CheckSiteManager:
 
     async def _check_hostname(self, hostname):
         # OpenSSL is more strict about misconfigured servers, e.g. it recognizes missing chains
-        openssl_error = await openssl_check_hostname(hostname)
-        if not openssl_error:
-            return CheckedSite(hostname, CheckResult.SUCCEEDED, message=None)
-        # Timeout is the same for both, don't do it twice unnecessary
-        elif openssl_error == 'Timed out':
-            return CheckedSite(hostname, CheckResult.FAILED, openssl_error)
-        else:
-            # OSCrypto gives better error messages, but it is less strict
-            oscrypto_error = await self.loop.run_in_executor(None, oscrypto_check_hostname, hostname)
-            error_message = oscrypto_error or openssl_error
-            return CheckedSite(hostname, CheckResult.FAILED, error_message)
+        openssl_error = await check_hostname(hostname)
+        result = CheckResult.FAILED if openssl_error else CheckResult.SUCCEEDED
+        return CheckedSite(hostname, result, openssl_error)
 
 
 class CheckResult(enum.Enum):
