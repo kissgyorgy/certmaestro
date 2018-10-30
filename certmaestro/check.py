@@ -1,8 +1,10 @@
+import os
 import ssl
 import enum
 import socket
 import asyncio
 import certifi
+from contextlib import redirect_stderr
 import attr
 from .url import parse_url
 
@@ -44,6 +46,7 @@ class CheckSiteManager:
         self.skipped = []
         self.succeeded = []
         self.failed = []
+        self._devnull = open(os.devnull, "w")
 
     @property
     def success_count(self):
@@ -97,7 +100,8 @@ class CheckSiteManager:
 
     async def _check_hostname(self, hostname):
         # OpenSSL is more strict about misconfigured servers, e.g. it recognizes missing chains
-        openssl_error = await check_hostname(hostname)
+        with redirect_stderr(self._devnull):
+            openssl_error = await check_hostname(hostname)
         result = CheckResult.FAILED if openssl_error else CheckResult.SUCCEEDED
         return CheckedSite(hostname, result, openssl_error)
 
