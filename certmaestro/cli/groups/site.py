@@ -1,3 +1,4 @@
+import asyncio
 import click
 
 
@@ -35,10 +36,11 @@ def show_cert(ctx, hostname, port):
 @click.option('-t', '--timeout', default=3.0,
               help='HTTP request timeout in seconds for individual requests.')
 @click.option('-r', '--retries', default=3)
+@click.option('-m', '--max-threads', default=10, type=click.IntRange(0, 100))
 @click.option('-f', '--follow-redirects', 'redirect', is_flag=True,
               help='Follow redirects (disabled by default).')
 @click.pass_context
-def check(ctx, urls, timeout, retries, redirect):
+def check(ctx, urls, timeout, retries, max_threads, redirect):
     """Checks if all of the websites have a valid certificate.
     Accepts multiple urls or hostnames. URLs with invalid protocols will be skipped.
     This doesn't say anything about your whole webserver configuration, only check
@@ -56,14 +58,10 @@ def check(ctx, urls, timeout, retries, redirect):
         raise click.UsageError('You need to provide at least one site to check!')
 
     click.echo('Checking certificates...')
-    manager = CheckSiteManager(urls, redirect, timeout, retries)
-    for checked_site in manager.check_sites():
-        if checked_site.succeeded:
-            click.secho(f'Valid:     {checked_site.url}', fg='green')
-        elif checked_site.skipped:
-            click.echo(f'Skipped:   {checked_site.url} ({checked_site.message})')
-        elif checked_site.failed:
-            click.secho(f'Failed:    {checked_site.url} ({checked_site.message})', fg='red')
+
+    manager = CheckSiteManager(redirect, timeout, retries, max_threads)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_check_sites(manager, urls))
 
     total_message = click.style(f'Total: {len(urls)}', fg='blue')
     success_message = click.style(f'success: {manager.success_count}', fg='green')
@@ -76,3 +74,13 @@ def check(ctx, urls, timeout, retries, redirect):
          ctx.exit(1)
     else:
          ctx.exit(0)
+
+
+async def _check_sites(manager, urls):
+    async for checked_site in manager.check_sites(urls):
+        if checked_site.succeeded:
+            click.secho(f'Valid:     {checked_site.url}', fg='green')
+        elif checked_site.skipped:
+            click.echo(f'Skipped:   {checked_site.url} ({checked_site.message})')
+        elif checked_site.failed:
+            click.secho(f'Failed:    {checked_site.url} ({checked_site.message})', fg='red')

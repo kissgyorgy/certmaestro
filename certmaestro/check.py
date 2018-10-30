@@ -1,23 +1,22 @@
+import os
 import ssl
 import enum
 import socket
+import asyncio
 import certifi
-from concurrent import futures
+from contextlib import redirect_stderr
 import attr
-from oscrypto.errors import TLSError
-from oscrypto.tls import TLSSocket
 from .url import parse_url
 
 
-def openssl_check_hostname(hostname):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
-    context = ssl.create_default_context(cafile=certifi.where())
-    ssl_sock = context.wrap_socket(sock, server_hostname=hostname)
+async def check_hostname(hostname):
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
     try:
-        ssl_sock.connect((hostname, 443))
-        ssl_sock.shutdown(socket.SHUT_RDWR)
-        ssl_sock.close()
+        # server_hostname is not needed, because by default,
+        # hostname is used for the server cert verification
+        _, writer = await asyncio.open_connection(hostname, 443, ssl=ssl_context)
+        writer.close()
+        await writer.wait_closed()
     except socket.timeout as e:
         return 'Timed out'
     except OSError as e:
@@ -29,57 +28,25 @@ def openssl_check_hostname(hostname):
 
 
 def parse_socket_error_message(message):
+    """Cut off brackets from the message, make it human readable."""
     # example: "[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:749)"
     start_ind = message.find(']')
-    if start_ind > -1:
+    if start_ind != -1:
         start = start_ind + 2
         end = message.find('(_ssl') - 1
         message = message[start:end]
     return message
 
 
-def oscrypto_check_hostname(hostname):
-    try:
-        # TODO: enable certificate verification with certifi (Mozilla CA bundle)
-        # to make results more consistent and reproducible
-        tls_socket = TLSSocket(hostname, 443)
-        tls_socket.shutdown()
-    except TLSError as e:
-        return e.message
-    except socket.gaierror as e:
-        return (str(e))
-    except socket.timeout as e:
-        return 'Timed out'
-    else:
-        return None
-
-
 class CheckSiteManager:
-    def __init__(self, urls, redirect, timeout, retries):
+    def __init__(self, redirect, timeout, retries, max_threads):
         self.redirect = redirect
         self.timeout = timeout
         self.retries = retries
-        self.urls = urls
         self.skipped = []
         self.succeeded = []
         self.failed = []
-
-    def check_sites(self):
-        skipped_urls = self._skip_urls()
-        hostnames = {parse_url(url).host for url in self.urls if url not in skipped_urls}
-
-        with futures.ThreadPoolExecutor(max_workers=3) as executor:
-            futures_to_urls = {executor.submit(self._check, hostname) for hostname in hostnames}
-            # we start yielding after starting requests, so the perceived speed might be better
-            # if the client does something with the return values
-            yield from self.skipped
-            for future in futures.as_completed(futures_to_urls):
-                result = self._make_result(future)
-                if result.succeeded:
-                    self.succeeded.append(result)
-                elif result.failed:
-                    self.failed.append(result)
-                yield result
+        self._devnull = open(os.devnull, "w")
 
     @property
     def success_count(self):
@@ -93,43 +60,50 @@ class CheckSiteManager:
     def fail_count(self):
         return len(self.failed)
 
-    def _skip_urls(self):
-        skipped_urls = set()
+    async def check_sites(self, urls):
+        self.skipped, skipped_urls = self._skip_urls(urls)
+        # we deduplicate hostnames, because they are fed in the form of URLs
+        hostnames = {parse_url(url).host for url in urls if url not in skipped_urls}
+        # we enforce task so they will be started right away, so we can yield from skipped
+        check_coros = [self._check_hostname(hostname) for hostname in hostnames]
+        # we start yielding after starting requests, so the perceived speed might be better
+        # if the client does something with the return values
+        for skipped in self.skipped:
+            yield skipped
 
-        for url in self.urls:
-            purl = parse_url(url)
-            if not purl.host or not purl.host.strip():
-                self._skip(url, 'invalid hostname')
-                skipped_urls.add(url)
+        for future in asyncio.as_completed(check_coros):
+            result = await future
+            if result.succeeded:
+                self.succeeded.append(result)
+            elif result.failed:
+                self.failed.append(result)
+            yield result
+
+    def _skip_urls(self, urls):
+        skipped_sites, skipped_urls = [], set()
+
+        for url in urls:
+            parsed = parse_url(url)
+            if parsed.host is None or not parsed.host.strip():
+                checked = CheckedSite(url, CheckResult.SKIPPED, 'invalid_hostname')
             # any other protocoll will be None and as we cannot make a difference,
             # we will check those. Maybe we shouldn't?
-            elif purl.scheme == 'http':
-                self._skip(url, 'not https://')
-                skipped_urls.add(url)
+            elif parsed.scheme == 'http':
+                checked = CheckedSite(url, CheckResult.SKIPPED, 'not https://')
+            else:
+                continue
 
-        return skipped_urls
+            skipped_sites.append(checked)
+            skipped_urls.add(url)
 
-    def _skip(self, url, reason):
-        skipresult = CheckedSite(url, CheckResult.SKIPPED, reason)
-        self.skipped.append(skipresult)
+        return skipped_sites, skipped_urls
 
-    def _make_result(self, future):
-        hostname, error_message = future.result()
-        result = CheckResult.FAILED if error_message else CheckResult.SUCCEEDED
-        return CheckedSite(hostname, result, error_message)
-
-    def _check(self, hostname):
+    async def _check_hostname(self, hostname):
         # OpenSSL is more strict about misconfigured servers, e.g. it recognizes missing chains
-        openssl_error = openssl_check_hostname(hostname)
-        if not openssl_error:
-            return hostname, None
-        # Timeout is the same for both, don't do it twice unnecessary
-        elif openssl_error == 'Timed out':
-            return hostname, openssl_error
-        else:
-            # OSCrypto gives better error messages, but is more allowing
-            oscrypto_error = oscrypto_check_hostname(hostname)
-            return hostname, oscrypto_error or openssl_error
+        with redirect_stderr(self._devnull):
+            openssl_error = await check_hostname(hostname)
+        result = CheckResult.FAILED if openssl_error else CheckResult.SUCCEEDED
+        return CheckedSite(hostname, result, openssl_error)
 
 
 class CheckResult(enum.Enum):
@@ -143,6 +117,7 @@ class CheckedSite:
     url = attr.ib()
     result = attr.ib(convert=CheckResult)
     message = attr.ib(default=None)
+
     succeeded = attr.ib(init=False)
     skipped = attr.ib(init=False)
     failed = attr.ib(init=False)
