@@ -4,6 +4,15 @@ Certmaestro
 Make X.509 certificates great again!
 
 
+Project status
+--------------
+I'm not developing it anymore, for multiple reasons:
+
+- There are a lots of tools nowadays to do what this application wanted to do.
+- There is a company who is doing exectly this: https://smallstep.com/certificates/
+- The Go programming language is a way better fit to do something like this.
+  If I ever pick up this project again, I will write it in Go.
+
 What?
 -----
 
