@@ -1,0 +1,103 @@
+# mikor aláírunk egy CSR-t
+[ ca ]
+default_ca = CA_default
+
+
+# https://www.openssl.org/docs/manmaster/apps/ca.html
+[ CA_default ]
+# a current directory a gyökér legyen (Fabric beállítja)
+dir           = ssl
+certs         = $dir/certs
+crl_dir       = $dir/crl
+new_certs_dir = $dir/newcerts
+database      = $dir/index.txt
+serial        = $dir/serial
+certificate   = $dir/OfficeControlRootCA.crt
+private_key   = $dir/OfficeControlRootCA.key
+
+policy = policy_supplied
+
+# a kiadott certificate meddig legyen érvényes
+default_days = 365
+
+# A visszavont certificate-ek listáját ennyi naponként generáljuk?
+default_crl_days = 365
+
+# Alapértelmezett titkosítás módja. SHA1 már elavult, SHA2-t használunk.
+default_md = sha256
+
+# Mikor aláírunk egy CSR-t, melyik sectiont használjuk
+x509_extensions = v3_req
+
+# két különböző certificate-nek lehessen ugyanaz a subjectje
+# azért kell, hogy ugyan arra a Common Name-re még lejárta előtt lehessen kiadni újat
+unique_subject = no
+
+# keep passed DN ordering
+preserve = no
+
+
+[ policy_supplied ]
+# unitName opcionális, összes többit úgy ahogy van megtartja
+countryName            = supplied
+commonName             = optional
+localityName           = supplied
+stateOrProvinceName    = optional
+organizationName       = supplied
+emailAddress           = optional
+organizationalUnitName = optional
+
+
+# mikor CSR-t csinálunk
+[ req ]
+# privát kulcs mérete
+default_bits = 2048
+
+# privát kulcs neve. Nem kell megadni, mert beállítjuk a -keyout paraméterrel
+# default_keyfile = cert.key
+
+# Certificate részleteit melyik sectionből vegye
+distinguished_name = req_distinguished_name
+
+# A CSR-hez tartozó beállítások
+req_extensions = v3_req
+
+utf8 = yes
+
+# ne titkosítsa a key filet. Ugyanaz mint a -nodes kapcsoló
+encrypt_key = no
+
+# kérdezze meg az értékeket a req_distinguished_name-ben beállított paraméterek alapján
+prompt = yes
+
+# This option specifies the digest algorithm to use.
+# Alapértelmezett titkosítás módja. SHA1 már elavult, SHA2-t használunk.
+default_md = sha256
+
+
+[ req_distinguished_name ]
+commonName = Domain, személynév vagy cégnév
+
+countryName = Ország kódja (max 2 karakter)
+countryName_default = HU
+countryName_min = 2
+countryName_max = 2
+
+stateOrProvinceName = Megye
+stateOrProvinceName_default = Pest megye
+
+localityName = Város
+localityName_default = Budapest
+
+organizationName = Cég/Szervezet (Kft.)
+
+organizationalUnitName = Szervezeti egység
+
+emailAddress = Email cím
+
+
+[ v3_req ]
+# Ha először CSR-t (Certificate signing request) generálunk és azt a rootCA-val írjuk alá
+basicConstraints = CA:FALSE
+# https://www.openssl.org/docs/manmaster/apps/x509v3_config.html
+extendedKeyUsage = clientAuth
