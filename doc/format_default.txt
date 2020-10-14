@@ -1,0 +1,31 @@
+Serial number:  9 (0x9)
+Not Before:     Dec 18 11:08:31 2016 GMT
+Not After:      Dec 18 11:08:31 2017 GMT
+Version:        3 (0x2)
+
+Issuer
+    Common Name:   www.officecontrol.hu
+    Country:       HU
+    State:         Pest megye
+    Location:      Budapest
+    Organization:  Anteus Kft.
+    Org. unit:     OfficeControl
+    Email:         support@officecontrol.hu
+
+Subject
+    Common Name:   Kiss György
+    Country:       HU
+    State:         Pest megye
+    Location:      Budapest
+    Organization:  Anteus Kft.
+
+X509v3 extensions
+    X509v3 Basic Constraints:
+        CA:FALSE
+    X509v3 Extended Key Usage:
+        TLS Web Client Authentication
+
+Public Key
+    Length:     2048 bit
+    Algorithm:  rsaEncryption
+    Exponent:   65537 (0x10001)
